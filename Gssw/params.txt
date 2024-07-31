@@ -1,0 +1,45 @@
+weight_gapO 6
+weight_gapE 1
+start_full_length_bonus 5
+end_full_length_bonus 5
+save_matrixes 1
+graph size 8
+score_matrix 1, -4, -4, -4 //confirmed via 
+  `grep -A 1 "score_matrix" stderr.txt | grep -v "1, -4, -4, -4" | grep -v 
+   score_matrix | grep -v ":--"`
+nt_table is the first len(sequence) of the following array
+4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 4, 1, 4, 4, 4, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 4, 1, 4, 4, 4, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 71, 67, 84, 67, 0, -15, 32, -96, -94, 127, 0, 0, -128, -53, 32, -96, -94, 127, 0, 0, -128, -105, 33, -96, -94, 127, 0, 0, 48, -1, -122, -96, -94, 127, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 83, 50, 50, 53, 95, 52, 56, 50, 49, 52, 57, 0, -2, 127, 0, 0, 80, -1, -122, -96, -94, 127, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 83, 50, 50, 53, 95, 52, 56, 50, 49, 52, 57, 0, 71, 84, 67, 71, -92, 0, 0, 0, 65, 71, 65, 67, 13, 0, 0, 0, 0, 0, 0, 0, -92, 0, 0, 0, -91, 0, 0, 0, 0, 4, 4, 4, 4, 4
+
+//Notes on how these were determined.
+//For the easy ones I used greps on sizes of 150 bp reads. I determined that the
+//everything used those outputs
+//for nt_table I used sampled reads between 150 and 240 I think. (see the sim
+//reads dataset) I also added a final read of len 255.
+//I greped out the nt_table lines, then I ran a python script to
+//check if each line of the output was a substring of the final line (the final
+//line corresponds of course to the 255 len read). This confirmed that all
+// strings were substrings of the first sequence characters of that final 
+//substring. I used the script included here
+
+'''
+Note, this will work. they are all the same, but you gotta watch out to make
+sure you don't include the grep numbers
+'''
+with open("tmp", 'r') as rfile:
+    contents = rfile.read().split("\n")
+
+print([contents[i] for i in range(1, len(contents),3)])
+filtered = [contents[i].replace(" ","").replace(",","") for i in range(1, len(contents),3)]
+accum = True
+for el in filtered:
+    #check if each element in the list is a substring of the final element
+    if el != filtered[-1][0:len(el)]: 
+        print(el)
+        print()
+        #we use the final element for comparison because it is length 255
+        print(filtered[-1])
+        accum=False
+        break;
+print(accum)
+
+
