@@ -5,3 +5,7 @@
 	path = Gssw/deps/vg
 	url = git@github.com:kaplannp/vg.git
 	branch = dumper
+[submodule "GraphAligner"]
+	path = Gbv/deps/GraphAligner
+	url = git@github.com:kaplannp/GraphAligner.git
+	branch = dumper
