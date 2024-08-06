@@ -12,3 +12,6 @@
 [submodule "gbwt"]
 	path = Gbwt/deps/gbwt
 	url = git@github.com:kaplannp/gbwt.git
+[submodule "sdsl-lite"]
+	path = Gbwt/deps/sdsl-lite
+	url = git@github.com:vgteam/sdsl-lite.git
