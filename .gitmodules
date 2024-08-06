@@ -9,3 +9,6 @@
 	path = Gbv/deps/GraphAligner
 	url = git@github.com:kaplannp/GraphAligner.git
 	branch = dumper
+[submodule "gbwt"]
+	path = Gbwt/deps/gbwt
+	url = git@github.com:kaplannp/gbwt.git
