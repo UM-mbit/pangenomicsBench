@@ -70,6 +70,17 @@ int main(){
 
   auto write_end = std::chrono::system_clock::now();
 
+  //write the timing breakdown
+  auto load_time_us = std::chrono::duration_cast<std::chrono::microseconds>(
+                                    load_end-load_start).count();
+  auto kernel_time_us = std::chrono::duration_cast<std::chrono::microseconds>(
+                                    kernel_end-kernel_start).count();
+  auto write_time_us = std::chrono::duration_cast<std::chrono::microseconds>(
+                                    write_end-write_start).count();
+  std::cout << "load time: " << load_time_us << "us" << std::endl;
+  std::cout << "kernel time: " << kernel_time_us << "us" << std::endl;
+  std::cout << "write time: " << write_time_us << "us" << std::endl;
+
   //cleanup
   delete std::get<0>(paramPair); //params
   delete std::get<1>(paramPair); //the SerializableParams
