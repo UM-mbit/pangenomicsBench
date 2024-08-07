@@ -63,7 +63,7 @@ def main():
     random.seed(args.randomSeed)
 
     #TODO eventually, we'll want to add the gbz path extraction
-    os.system("vg paths -x {} -A -H> extractedPaths.gaf".format(args.inputFile))
+    os.system("vg paths -x {} -A -H> .tmpExtractedPaths.gaf".format(args.inputFile))
 
     #parse the haplotypes from the file
     df = pd.read_csv(".tmpExtractedPaths.gaf", delimiter="\t", header=None)

@@ -1,0 +1,5 @@
+You need to run 
+BUILD_PORTABLE=1 CXXFLAGS="-O3 -ggdb -g3 -fopenmp" ./install.sh $(pwd) from within the sdsl-lite dependency.
+Ideally this will be automated in the future
+
+Also gotta make in the gbwt

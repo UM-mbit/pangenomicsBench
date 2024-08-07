@@ -3,6 +3,26 @@
 
 #include <vector>
 #include <string>
+
+#include "gbwt/gbwt.h"
+#include "gbwt/algorithms.h"
+
+
+/*
+ * convert gbwt::SearchState to a string
+ * @param gbwt::SearchState the output of a prefix query
+ * @returns string representation of the query. "node: (startRange,endRange)"
+ */
+std::string searchStateToStr(gbwt::SearchState state);
+
+/*
+ * writes the query results to a file 
+ * @param outDir the ouput directory
+ * @param vector<gbwt::searchState> the outputs of the queries
+ */
+void dumpStatesToFile(std::string outDir, 
+      std::vector<gbwt::SearchState> queryOuts);
+
 /*
  * loads in queries from a file
  * @param string inDir, the root directory of the Inputs
@@ -11,11 +31,18 @@
 std::vector<std::vector<int>>* loadQueries(std::string inputDir, int numInputs);
 
 /*
+ * loads in the gbwt from a file
+ * @param string inDir, the root directory of the Inputs
+ * @return GBWT object initialized from the GBWT in the Inputs
+ */
+gbwt::GBWT* ldGbwt(std::string inputDir);
+
+/*
  * Counts the number of reads to process
  * @param string inDir, the root directory of the Inputs
  * @return return the number of reads we're running
  */
-int ld_num_inputs(std::string in_dir);
+int ldNumInputs(std::string in_dir);
 
 
 #endif // __loadParams_H__

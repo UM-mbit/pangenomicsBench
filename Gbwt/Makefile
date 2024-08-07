@@ -5,10 +5,11 @@ CXX ?= g++
 EXE:=gbwt
 
 CWD:=$(shell pwd)
-CXXFLAGS:= -O3 -ggdb -g3
-INCLUDE_FLAGS := -I$(SRC_DIR)
-LD_LIB_DIR_FLAGS := 
-LD_LIB_FLAGS := 
+GBWT_HOME:=$(CWD)
+CXXFLAGS:= -O3 -ggdb -g3 -fopenmp
+INCLUDE_FLAGS := -I$(SRC_DIR) -I$(GBWT_HOME)/deps/gbwt/include -I$(GBWT_HOME)/deps/sdsl-lite/include
+LD_LIB_DIR_FLAGS := -L$(GBWT_HOME)/deps/gbwt/lib -L$(GBWT_HOME)/deps/sdsl-lite/lib
+LD_LIB_FLAGS := -lgbwt -lsdsl -fopenmp
 OBJ_FILES := $(SRC_DIR)/loadParams.o $(SRC_DIR)/main.o $(SRC_DIR)/eval.o
 
 all: $(BIN_DIR)/$(EXE)

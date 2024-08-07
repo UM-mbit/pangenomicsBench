@@ -5,8 +5,11 @@
 
 #include "loadParams.h"
 #include "eval.h"
+#include "gbwt/gbwt.h"
+#include "gbwt/algorithms.h"
 
-#define INPUT_DIR "/data2/kaplannp/Genomics/Datasets/Kernels/Gssw"
+
+#define INPUT_DIR "/data2/kaplannp/Genomics/Datasets/Kernels/Gbwt"
 #define OUT_DIR "Out" //NOTE, be responsible. rm -rf OUT_DIR is called
 
 int main(){
@@ -14,20 +17,26 @@ int main(){
   std::cout << "Loading Inputs" << std::endl;
   auto load_start = std::chrono::system_clock::now();
   init_output_dir(OUT_DIR);
-  int numInputs = ld_num_inputs(INPUT_DIR);
+  int numInputs = ldNumInputs(INPUT_DIR);
   std::vector<std::vector<int>>* queries = loadQueries(INPUT_DIR,numInputs);
+  std::vector<gbwt::SearchState> queryResults = 
+      std::vector<gbwt::SearchState>(numInputs);
+  gbwt::GBWT* gbwtIndex = ldGbwt(INPUT_DIR);
   auto load_end = std::chrono::system_clock::now();
   
   std::cout << "Running Kernel" << std::endl;
   auto kernel_start = std::chrono::system_clock::now();
   //For loop over reads.
   for (int i=0; i < numInputs; i++){
+    std::vector<int>& query = (*queries)[i];
+    gbwtIndex->prefix(query.begin(), query.end());
   }
   std::cout << "Kernel Complete" << std::endl;
   auto kernel_end = std::chrono::system_clock::now();
-
+  
   std::cout << "Writing Outputs" << std::endl;
   auto write_start = std::chrono::system_clock::now();
+  dumpStatesToFile(OUT_DIR, queryResults);
   auto write_end = std::chrono::system_clock::now();
   
   //write the timing breakdown
