@@ -15,3 +15,6 @@
 [submodule "sdsl-lite"]
 	path = Gbwt/deps/sdsl-lite
 	url = git@github.com:vgteam/sdsl-lite.git
+[submodule "pgsgd/deps/odgi"]
+	path = pgsgd/deps/odgi
+	url = git@github.com:nsmlzl/odgi.git
