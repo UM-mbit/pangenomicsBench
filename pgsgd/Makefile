@@ -5,10 +5,10 @@ CXX ?= g++
 EXE:=pgsgd
 
 CWD:=$(shell pwd)
-CXXFLAGS:= -Wall -O3 -ggdb -g3
+CXXFLAGS:= -Wall -O3 -ggdb -g3 -fopenmp
 INCLUDE_FLAGS := -I$(CWD)/deps/odgi/src -I$(CWD)/deps/odgi/src/algorithms -I$(CWD)/deps/odgi/deps/libhandlegraph/src/include -I$(CWD)/deps/odgi/deps/DYNAMIC/include -I$(CWD)/deps/odgi/deps/hopscotch-map/include -I$(CWD)/deps/odgi/deps/sparsepp/sparsepp -I$(CWD)/deps/odgi/deps/flat_hash_map -I$(CWD)/deps/odgi/deps/atomicbitvector/include -I$(CWD)/deps/odgi/deps/Xoshiro-cpp -I$(CWD)/deps/odgi/deps/dirtyzipf -I$(CWD)/deps/odgi/deps/gfakluge/src -I$(CWD)/deps/odgi/deps/gfakluge/src/tinyFA -I$(CWD)/deps/odgi/deps/atomic_queue/include/atomic_queue
 LD_LIB_DIR_FLAGS := -L$(CWD)/deps/odgi/lib
-LD_LIB_FLAGS := -lodgi
+LD_LIB_FLAGS := -lodgi -fopenmp
 OBJ_FILES := $(SRC_DIR)/main.o
 
 all: $(BIN_DIR)/$(EXE)
