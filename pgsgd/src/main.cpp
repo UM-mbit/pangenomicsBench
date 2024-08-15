@@ -5,9 +5,11 @@
 #include <atomic>
 #include <random>
 
+#include "algorithms/draw.hpp"
 #include "algorithms/layout.hpp"        // needs to be included before utils.hpp/odgi.hpp
 #include "odgi.hpp"
 #include "utils.hpp"
+#include "weakly_connected_components.hpp"
 
 #include "cuda/layout.h"
 #include "dirty_zipfian_int_distribution.h"
@@ -460,7 +462,40 @@ int main() {
     free(path_data.element_array);
     free(zetas);
 
-    // TODO border?
+
+    // refine order by weakly connected components
+    std::vector<std::vector<handlegraph::handle_t>> weak_components = odgi::algorithms::weakly_connected_component_vectors(&graph);
+
+    double border = 1000.0;
+    double curr_y_offset = border;
+    std::vector<odgi::algorithms::coord_range_2d_t> component_ranges;
+    for (auto& component : weak_components) {
+        component_ranges.emplace_back();
+        auto& component_range = component_ranges.back();
+        for (auto& handle : component) {
+            uint64_t pos = 2 * number_bool_packing::unpack_number(handle);
+            for (uint64_t j = pos; j <= pos+1; ++j) {
+                component_range.include(X[j], Y[j]);
+            }
+        }
+        component_range.x_offset = component_range.min_x - border;
+        component_range.y_offset = curr_y_offset - component_range.min_y;
+        curr_y_offset += component_range.height() + border;
+    }
+
+    for (uint64_t num_component = 0; num_component < weak_components.size(); ++num_component) {
+        auto& component_range = component_ranges[num_component];
+
+        for (auto& handle :  weak_components[num_component]) {
+            uint64_t pos = 2 * number_bool_packing::unpack_number(handle);
+
+            for (uint64_t j = pos; j <= pos+1; ++j) {
+                X[j] -= component_range.x_offset;
+                Y[j] += component_range.y_offset;
+            }
+        }
+    }
+
 
     // generate layout file
     odgi::algorithms::layout::Layout lay(X, Y);
