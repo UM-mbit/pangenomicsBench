@@ -5,6 +5,7 @@
 #include <atomic>
 #include <random>
 
+#include "algorithms/layout.hpp"        // needs to be included before utils.hpp/odgi.hpp
 #include "odgi.hpp"
 #include "utils.hpp"
 
@@ -264,8 +265,8 @@ int main() {
 
 
     // create random X and Y coordinates
-    std::vector<std::atomic<double>> X(graph.get_node_count() * 2);
-    std::vector<std::atomic<double>> Y(graph.get_node_count() * 2);
+    std::vector<double> X(graph.get_node_count() * 2);
+    std::vector<double> Y(graph.get_node_count() * 2);
 
     std::random_device dev;
     std::mt19937 rng(dev());
@@ -273,11 +274,11 @@ int main() {
     uint64_t len = 0;
     graph.for_each_handle([&](const handle_t &h) {
           uint64_t pos = 2 * number_bool_packing::unpack_number(h);
-          X[pos].store(len);
-          Y[pos].store(gaussian_noise(rng));
+          X[pos] = len;
+          Y[pos] = gaussian_noise(rng);
           len += graph.get_length(h);
-          X[pos + 1].store(len);
-          Y[pos + 1].store(gaussian_noise(rng));
+          X[pos + 1] = len;
+          Y[pos + 1] = gaussian_noise(rng);
       });
 
 
@@ -302,10 +303,10 @@ int main() {
         n_tmp->seq_length = graph.get_length(h);
 
         // copy random coordinates
-        n_tmp->coords[0].store(float(X[node_idx * 2].load()));
-        n_tmp->coords[1].store(float(Y[node_idx * 2].load()));
-        n_tmp->coords[2].store(float(X[node_idx * 2 + 1].load()));
-        n_tmp->coords[3].store(float(Y[node_idx * 2 + 1].load()));
+        n_tmp->coords[0].store(float(X[node_idx * 2]));
+        n_tmp->coords[1].store(float(Y[node_idx * 2]));
+        n_tmp->coords[2].store(float(X[node_idx * 2 + 1]));
+        n_tmp->coords[3].store(float(Y[node_idx * 2 + 1]));
     }
 
 
@@ -445,10 +446,10 @@ int main() {
                 std::cout << "WARNING: invalid coordiate" << std::endl;
             }
         }
-        X[node_idx * 2].store(double(coords[0].load()));
-        Y[node_idx * 2].store(double(coords[1].load()));
-        X[node_idx * 2 + 1].store(double(coords[2].load()));
-        Y[node_idx * 2 + 1].store(double(coords[3].load()));
+        X[node_idx * 2] = double(coords[0].load());
+        Y[node_idx * 2] = double(coords[1].load());
+        X[node_idx * 2 + 1] = double(coords[2].load());
+        Y[node_idx * 2 + 1] = double(coords[3].load());
         //std::cout << "coords of " << node_idx << ": [" << X[node_idx*2] << "; " << Y[node_idx*2] << "] ; [" << X[node_idx*2+1] << "; " << Y[node_idx*2+1] <<"]\n";
     }
 
@@ -459,5 +460,11 @@ int main() {
     free(path_data.element_array);
     free(zetas);
 
-    // TODO create layout file
+    // TODO border?
+
+    // generate layout file
+    odgi::algorithms::layout::Layout lay(X, Y);
+    ofstream f("out.lay");
+    lay.serialize(f);
+    f.close();
 }
