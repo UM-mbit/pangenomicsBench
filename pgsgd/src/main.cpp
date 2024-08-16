@@ -499,7 +499,7 @@ int main() {
 
     // generate layout file
     odgi::algorithms::layout::Layout lay(X, Y);
-    ofstream f("out.lay");
+    ofstream f("out_benchmark.lay");
     lay.serialize(f);
     f.close();
 }
