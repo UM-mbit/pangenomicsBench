@@ -40,6 +40,10 @@ function runner {
 
 }
 
-rm -rf TMP
+rm -rf GbwtOut
 GBWT="./Gbwt/bin/gbwt /data2/kaplannp/Genomics/Datasets/Kernels/Gbwt"
-runner "TMP" "$GBWT"
+runner "GbwtOut" "$GBWT"
+rm -rf GsswOut
+GSSW="./Gssw/bin/gssw /data2/kaplannp/Genomics/Datasets/Kernels/Gssw"
+runner "GsswOut" "$GSSW"
+

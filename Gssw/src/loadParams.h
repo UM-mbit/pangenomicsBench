@@ -31,6 +31,15 @@ typedef struct ReadAlignmentParams {
 } ReadAlignmentParams;
 
 /*
+ * returns the first argment on the command line. This should be the directory
+ * of the input files
+ * @param int argc as passed to main
+ * @param char* argv as passed to main
+ * @return string the 1st command line arg, should be input dir
+ */
+std::string parseArgs(int argc, char* argv[]);
+
+/*
  */
 std::vector<ReadAlignmentParams>* load_read_alignment_params(size_t num_inputs,
                                                         std::string input_dir);
