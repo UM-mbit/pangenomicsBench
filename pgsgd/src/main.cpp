@@ -18,10 +18,14 @@
 const int NTHREADS = 6;
 const int ITER_MAX = 30;
 
+const string INPUT_PATH = "data/DRB1-3123.og";
+// const string INPUT_PATH = "data/chr20.og";
+const string OUT_PATH = "out_benchmark.lay";
+
 
 void layout_kernel(cuda::layout_config_t config, double *etas, double *zetas, cuda::node_data_t &node_data, cuda::path_data_t &path_data){
     int nbr_threads = config.nthreads;
-    std::cout << "cuda cpu layout (" << nbr_threads << " threads)" << std::endl;
+    // std::cout << "cuda cpu layout (" << nbr_threads << " threads)" << std::endl;
     std::vector<uint64_t> path_dist;
     for (uint32_t p = 0; p < path_data.path_count; p++) {
         path_dist.push_back(uint64_t(path_data.paths[p].step_count));
@@ -259,11 +263,11 @@ void layout_kernel(cuda::layout_config_t config, double *etas, double *zetas, cu
 
 
 int main() {
-    std::cout << "pgsgd benchmark:" << std::endl;
+    std::cout << "PGSGD benchmark:" << std::endl;
+    std::cout << "Loading input (" << INPUT_PATH << ")" << std::endl;
 
     odgi::graph_t graph;
-    utils::handle_gfa_odgi_input("data/DRB1-3123.og", "layout", false, NTHREADS, graph);
-    // utils::handle_gfa_odgi_input("data/chr20.og", "layout", false, NTHREADS, graph);
+    utils::handle_gfa_odgi_input(INPUT_PATH, "layout", false, NTHREADS, graph);
 
 
     // create random X and Y coordinates
@@ -287,7 +291,7 @@ int main() {
     // create node data structure
     // consisting of sequence length and coords
     uint32_t node_count = graph.get_node_count();
-    std::cout << "node_count: " << node_count << std::endl;
+    // std::cout << "node_count: " << node_count << std::endl;
     assert(graph.min_node_id() == 1);
     assert(graph.max_node_id() == node_count);
     assert(graph.max_node_id() - graph.min_node_id() + 1 == node_count);
@@ -343,8 +347,8 @@ int main() {
         first_step_counter += step_count;
     }
 
-    std::cout << "sum_path_step_count: " << sum_path_step_count << std::endl;
-    std::cout << "max_path_step_count: " << max_path_step_count << std::endl;
+    // std::cout << "sum_path_step_count: " << sum_path_step_count << std::endl;
+    // std::cout << "max_path_step_count: " << max_path_step_count << std::endl;
 
 #pragma omp parallel for num_threads(NTHREADS)
     for (uint32_t path_idx = 0; path_idx < path_count; path_idx++) {
@@ -391,14 +395,14 @@ int main() {
     cuda::layout_config_t config;
     config.iter_max = ITER_MAX;
     config.min_term_updates = 10.0 * sum_path_step_count;
-    config.eta_max = max_path_step_count * max_path_step_count;    // max learning rate: square longest path
-    config.eps = 0.01;                                              // final learning rate
+    config.eta_max = max_path_step_count * max_path_step_count;             // max learning rate: square longest path
+    config.eps = 0.01;                                                      // final learning rate
     config.iter_with_max_learning_rate = 0;
     config.first_cooling_iteration = std::floor(0.5 * double{ITER_MAX});
-    config.theta = 0.99;            // theta value for zipf distribution
-    config.space = max_path_step_count;              // maximum space size of zipf distribution
-    config.space_max = 1000;                            // maximum space size of zipf distribution after which quantization occurs
-    config.space_quantization_step = 100;               // size of quantization step of zipf distribution
+    config.theta = 0.99;                                                    // theta value for zipf distribution
+    config.space = max_path_step_count;                                     // maximum space size of zipf distribution
+    config.space_max = 1000;                                                // maximum space size of zipf distribution after which quantization occurs
+    config.space_quantization_step = 100;                                   // size of quantization step of zipf distribution
     config.nthreads = NTHREADS;
 
 
@@ -415,10 +419,10 @@ int main() {
     // cache zipf zetas
     double *zetas;
     uint64_t zetas_cnt = ((config.space <= config.space_max)? config.space : (config.space_max + (config.space - config.space_max) / config.space_quantization_step + 1)) + 1;
-    std::cout << "zetas_cnt: " << zetas_cnt << std::endl;
-    std::cout << "space_max: " << config.space_max << std::endl;
-    std::cout << "config.space: " << config.space << std::endl;
-    std::cout << "config.space_quantization: " << config.space_quantization_step << std::endl;
+    // std::cout << "zetas_cnt: " << zetas_cnt << std::endl;
+    // std::cout << "space_max: " << config.space_max << std::endl;
+    // std::cout << "config.space: " << config.space << std::endl;
+    // std::cout << "config.space_quantization: " << config.space_quantization_step << std::endl;
 
     zetas = new double[zetas_cnt];
     double zeta_tmp = 0.0;
@@ -434,9 +438,12 @@ int main() {
 
 
     // run kernel
+    std::cout << "Running kernel (" << NTHREADS << " threads)" << std::endl;
     layout_kernel(config, etas, zetas, node_data, path_data);
+    std::cout << "Kernel complete" << std::endl;
 
 
+    std::cout << "Writing output (" << OUT_PATH << ")" << std::endl;
     // copy coords back to X, Y vectors
     for (uint32_t node_idx = 0; node_idx < node_count; node_idx++) {
         cuda::node_t *n = &(node_data.nodes[node_idx]);
@@ -499,7 +506,7 @@ int main() {
 
     // generate layout file
     odgi::algorithms::layout::Layout lay(X, Y);
-    ofstream f("out_benchmark.lay");
+    ofstream f(OUT_PATH);
     lay.serialize(f);
     f.close();
 }
