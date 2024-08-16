@@ -23,7 +23,7 @@ void layout_kernel(cuda::layout_config_t config, double *etas, double *zetas, cu
     int nbr_threads = config.nthreads;
     std::cout << "cuda cpu layout (" << nbr_threads << " threads)" << std::endl;
     std::vector<uint64_t> path_dist;
-    for (int p = 0; p < path_data.path_count; p++) {
+    for (uint32_t p = 0; p < path_data.path_count; p++) {
         path_dist.push_back(uint64_t(path_data.paths[p].step_count));
     }
 
@@ -65,7 +65,7 @@ void layout_kernel(cuda::layout_config_t config, double *etas, double *zetas, cu
         std::chrono::high_resolution_clock::time_point after_store;
 #endif
 
-        for (int iter = 0; iter < config.iter_max; iter++ ) {
+        for (uint64_t iter = 0; iter < config.iter_max; iter++ ) {
             // synchronize all threads before each iteration
 #pragma omp barrier
             for (int step = 0; step < steps_per_thread; step++ ) {
@@ -87,8 +87,8 @@ void layout_kernel(cuda::layout_config_t config, double *etas, double *zetas, cu
                 total_duration_one_step_gen += std::chrono::duration_cast<std::chrono::nanoseconds>(one_step_gen - start_dist);
 #endif
                 uint32_t s2_idx;
-                if (iter + 1 >= config.first_cooling_iteration || flip(gen)) {
-                    if (s1_idx > 0 && flip(gen) || s1_idx == p.step_count-1) {
+                if (iter + 1 >= uint64_t(config.first_cooling_iteration) || flip(gen)) {
+                    if ((s1_idx > 0 && flip(gen)) || s1_idx == p.step_count-1) {
                         // go backward
                         uint32_t jump_space = std::min(config.space, s1_idx);
                         uint32_t space = jump_space;
@@ -295,7 +295,7 @@ int main() {
     cuda::node_data_t node_data;
     node_data.node_count = node_count;
     node_data.nodes = new cuda::node_t[node_count];
-    for (int node_idx = 0; node_idx < node_count; node_idx++) {
+    for (uint32_t node_idx = 0; node_idx < node_count; node_idx++) {
         //assert(graph.has_node(node_idx));
         cuda::node_t *n_tmp = &node_data.nodes[node_idx];
 
@@ -333,7 +333,7 @@ int main() {
 
     // get length and starting position of all paths
     uint32_t first_step_counter = 0;
-    for (int path_idx = 0; path_idx < path_count; path_idx++) {
+    for (uint32_t path_idx = 0; path_idx < path_count; path_idx++) {
         odgi::path_handle_t p = path_handles[path_idx];
         int step_count = graph.get_step_count(p);
         sum_path_step_count += step_count;
@@ -347,7 +347,7 @@ int main() {
     std::cout << "max_path_step_count: " << max_path_step_count << std::endl;
 
 #pragma omp parallel for num_threads(NTHREADS)
-    for (int path_idx = 0; path_idx < path_count; path_idx++) {
+    for (uint32_t path_idx = 0; path_idx < path_count; path_idx++) {
         odgi::path_handle_t p = path_handles[path_idx];
         //std::cout << graph.get_path_name(p) << ": " << graph.get_step_count(p) << std::endl;
 
@@ -362,7 +362,7 @@ int main() {
             odgi::step_handle_t s = graph.path_begin(p);
             int64_t pos = 1;
             // Iterate through path
-            for (int step_idx = 0; step_idx < step_count; step_idx++) {
+            for (uint32_t step_idx = 0; step_idx < step_count; step_idx++) {
                 odgi::handle_t h = graph.get_handle_of_step(s);
                 //std::cout << graph.get_id(h) << std::endl;
 
@@ -406,7 +406,7 @@ int main() {
     double *etas = new double[config.iter_max];
     const double eta_min = config.eps / 1.0;
     const double lambda = log(config.eta_max / eta_min) / ((double) config.iter_max - 1);
-    for (int32_t i = 0; i < config.iter_max; i++) {
+    for (int64_t i = 0; i < int64_t(config.iter_max); i++) {
         double eta = config.eta_max * exp(-lambda * (std::abs(i - config.iter_with_max_learning_rate)));
         etas[i] = isnan(eta)? eta_min : eta;
     }
@@ -438,7 +438,7 @@ int main() {
 
 
     // copy coords back to X, Y vectors
-    for (int node_idx = 0; node_idx < node_count; node_idx++) {
+    for (uint32_t node_idx = 0; node_idx < node_count; node_idx++) {
         cuda::node_t *n = &(node_data.nodes[node_idx]);
         // coords[0], coords[1], coords[2], coords[3] are stored consecutively.
         std::atomic<float> *coords = n->coords;
@@ -456,11 +456,11 @@ int main() {
     }
 
 
-    free(etas);
-    free(node_data.nodes);
-    free(path_data.paths);
-    free(path_data.element_array);
-    free(zetas);
+    delete[] etas;
+    delete[] node_data.nodes;
+    delete[] path_data.paths;
+    delete[] path_data.element_array;
+    delete[] zetas;
 
 
     // refine order by weakly connected components
