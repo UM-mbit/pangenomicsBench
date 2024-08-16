@@ -266,6 +266,8 @@ int main() {
     std::cout << "PGSGD benchmark:" << std::endl;
     std::cout << "Loading input (" << INPUT_PATH << ")" << std::endl;
 
+    auto load_start = std::chrono::system_clock::now();
+
     odgi::graph_t graph;
     utils::handle_gfa_odgi_input(INPUT_PATH, "layout", false, NTHREADS, graph);
 
@@ -287,6 +289,8 @@ int main() {
           Y[pos + 1] = gaussian_noise(rng);
       });
 
+
+    auto load_conversion_start = std::chrono::system_clock::now();
 
     // create node data structure
     // consisting of sequence length and coords
@@ -391,6 +395,8 @@ int main() {
         }
     }
 
+    auto load_conversion_end = std::chrono::system_clock::now();
+
 
     cuda::layout_config_t config;
     config.iter_max = ITER_MAX;
@@ -436,14 +442,20 @@ int main() {
         }
     }
 
+    auto load_end = std::chrono::system_clock::now();
+
 
     // run kernel
     std::cout << "Running kernel (" << NTHREADS << " threads)" << std::endl;
+    auto kernel_start = std::chrono::system_clock::now();
     layout_kernel(config, etas, zetas, node_data, path_data);
+    auto kernel_end = std::chrono::system_clock::now();
     std::cout << "Kernel complete" << std::endl;
 
 
     std::cout << "Writing output (" << OUT_PATH << ")" << std::endl;
+    auto write_start = std::chrono::system_clock::now();
+
     // copy coords back to X, Y vectors
     for (uint32_t node_idx = 0; node_idx < node_count; node_idx++) {
         cuda::node_t *n = &(node_data.nodes[node_idx]);
@@ -509,4 +521,21 @@ int main() {
     ofstream f(OUT_PATH);
     lay.serialize(f);
     f.close();
+
+    auto write_end = std::chrono::system_clock::now();
+
+
+    auto load_time_us = std::chrono::duration_cast<std::chrono::microseconds>(
+            load_end-load_start).count();
+    auto load_conversion_time_us = std::chrono::duration_cast<std::chrono::microseconds>(
+            load_conversion_end-load_conversion_start).count();
+    auto kernel_time_us = std::chrono::duration_cast<std::chrono::microseconds>(
+            kernel_end-kernel_start).count();
+    auto write_time_us = std::chrono::duration_cast<std::chrono::microseconds>(
+            write_end-write_start).count();
+
+    std::cout << std::endl;
+    std::cout << "Load time: " << load_time_us << "us (conversion time: " << load_conversion_time_us << "us)" << std::endl;
+    std::cout << "Kernel time: " << kernel_time_us << "us" << std::endl;
+    std::cout << "Write time: " << write_time_us << "us" << std::endl;
 }
