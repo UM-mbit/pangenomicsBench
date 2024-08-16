@@ -6,10 +6,25 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <cassert>
 
 #include "gbwt/gbwt.h"
 #include "gbwt/algorithms.h"
 
+std::string parseArgs(int argc, char* argv[]){
+  if (argc == 2){
+    return argv[1];
+  } else {
+    if (argc == 1){
+      std::cerr << "No command-line argument provided. ";
+    } else if (argc > 2){
+      std::cerr << "too many command-line arguments provided. ";
+    }
+    std::cerr << "Please specify one argument, the path to the input directory" << std::endl;
+    assert(argc == 2);
+  }
+  return "";
+}
 
 std::string searchStateToStr(gbwt::SearchState state){
   std::stringstream ss;

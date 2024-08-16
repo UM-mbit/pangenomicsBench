@@ -2,37 +2,44 @@
 #include <cstdlib>
 #include <vector>
 #include <chrono>
+#include <omp.h>
 
 #include "loadParams.h"
 #include "eval.h"
 #include "gbwt/gbwt.h"
 #include "gbwt/algorithms.h"
+#include "vtuneConfigs.h"
 
 
-#define INPUT_DIR "/data2/kaplannp/Genomics/Datasets/Kernels/Gbwt"
 #define OUT_DIR "Out" //NOTE, be responsible. rm -rf OUT_DIR is called
 
-int main(){
+int main(int argc, char* argv[]){
+  std::string inputDir = parseArgs(argc, argv);
 
   std::cout << "Loading Inputs" << std::endl;
   auto load_start = std::chrono::system_clock::now();
   init_output_dir(OUT_DIR);
-  int numInputs = ldNumInputs(INPUT_DIR);
-  std::vector<std::vector<int>>* queries = loadQueries(INPUT_DIR,numInputs);
+  int numInputs = ldNumInputs(inputDir);
+  std::vector<std::vector<int>>* queries = loadQueries(inputDir,numInputs);
   std::vector<gbwt::SearchState> queryResults = 
       std::vector<gbwt::SearchState>(numInputs);
-  gbwt::GBWT* gbwtIndex = ldGbwt(INPUT_DIR);
+  gbwt::GBWT* gbwtIndex = ldGbwt(inputDir);
   auto load_end = std::chrono::system_clock::now();
   
   std::cout << "Running Kernel" << std::endl;
   auto kernel_start = std::chrono::system_clock::now();
   //For loop over reads.
+  VTUNE_BEGIN
+#if (OMP_ENABLED==1)
+  #pragma omp parallel for
+#endif
   for (int i=0; i < numInputs; i++){
     std::vector<int>& query = (*queries)[i];
     gbwtIndex->prefix(query.begin(), query.end());
   }
-  std::cout << "Kernel Complete" << std::endl;
+  VTUNE_END
   auto kernel_end = std::chrono::system_clock::now();
+  std::cout << "Kernel Complete" << std::endl;
   
   std::cout << "Writing Outputs" << std::endl;
   auto write_start = std::chrono::system_clock::now();
