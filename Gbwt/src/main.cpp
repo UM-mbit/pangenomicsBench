@@ -28,12 +28,11 @@ int main(int argc, char* argv[]){
   
   std::cout << "Running Kernel" << std::endl;
   auto kernel_start = std::chrono::system_clock::now();
-  //For loop over reads.
   VTUNE_BEGIN
 #if (OMP_ENABLED==1)
   #pragma omp parallel for
 #endif
-  for (int i=0; i < numInputs; i++){
+  for (int i=0; i < numInputs; i++){ //loop over reads
     std::vector<int>& query = (*queries)[i];
     gbwtIndex->prefix(query.begin(), query.end());
   }
