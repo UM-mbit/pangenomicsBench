@@ -43,7 +43,9 @@ function runner {
 rm -rf GbwtOut
 GBWT="./Gbwt/bin/gbwt /data2/kaplannp/Genomics/Datasets/Kernels/Gbwt"
 runner "GbwtOut" "$GBWT"
-rm -rf GsswOut
-GSSW="./Gssw/bin/gssw /data2/kaplannp/Genomics/Datasets/Kernels/Gssw"
-runner "GsswOut" "$GSSW"
-
+#rm -rf GsswOut
+#GSSW="./Gssw/bin/gssw /data2/kaplannp/Genomics/Datasets/Kernels/Gssw"
+#runner "GsswOut" "$GSSW"
+#rm -rf GbvOut
+#GBV="./Gbv/bin/gbv /data2/kaplannp/Genomics/Datasets/Kernels/Gbv"
+#runner "GbvOut" "$Gbv"
