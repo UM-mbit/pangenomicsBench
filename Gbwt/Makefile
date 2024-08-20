@@ -6,10 +6,10 @@ EXE:=gbwt
 
 CWD:=$(shell pwd)
 GBWT_HOME:=$(CWD)
-CXXFLAGS:= -O3 -ggdb -g3 -fopenmp
-INCLUDE_FLAGS := -I$(SRC_DIR) -I$(GBWT_HOME)/deps/gbwt/include -I$(GBWT_HOME)/deps/sdsl-lite/include
-LD_LIB_DIR_FLAGS := -L$(GBWT_HOME)/deps/gbwt/lib -L$(GBWT_HOME)/deps/sdsl-lite/lib
-LD_LIB_FLAGS := -lgbwt -lsdsl -fopenmp
+CXXFLAGS:= -O3 -ggdb -g3 -fopenmp -DOMP_ENABLED=$(OMP_ENABLED) -DVTUNE_ENABLED=$(VTUNE_ENABLED)
+INCLUDE_FLAGS :=-I$(CWD)/../SharedDeps/include -I$(SRC_DIR) -I$(GBWT_HOME)/deps/gbwt/include -I$(GBWT_HOME)/deps/sdsl-lite/include -I$(VTUNE_HOME)/include 
+LD_LIB_DIR_FLAGS := -L$(GBWT_HOME)/deps/gbwt/lib -L$(GBWT_HOME)/deps/sdsl-lite/lib -L$(VTUNE_HOME)/lib64
+LD_LIB_FLAGS := -lgbwt -lsdsl -littnotify -fopenmp -ldl
 OBJ_FILES := $(SRC_DIR)/loadParams.o $(SRC_DIR)/main.o $(SRC_DIR)/eval.o
 
 all: $(BIN_DIR)/$(EXE)

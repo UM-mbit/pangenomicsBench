@@ -9,21 +9,6 @@
 
 
 /*
- * convert gbwt::SearchState to a string
- * @param gbwt::SearchState the output of a prefix query
- * @returns string representation of the query. "node: (startRange,endRange)"
- */
-std::string searchStateToStr(gbwt::SearchState state);
-
-/*
- * writes the query results to a file 
- * @param outDir the ouput directory
- * @param vector<gbwt::searchState> the outputs of the queries
- */
-void dumpStatesToFile(std::string outDir, 
-      std::vector<gbwt::SearchState> queryOuts);
-
-/*
  * loads in queries from a file
  * @param string inDir, the root directory of the Inputs
  * @return vector<vector<int>> each vector<int> is a list of node ids (a query)

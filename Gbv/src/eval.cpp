@@ -7,13 +7,18 @@
 #include "nlohmann/json.hpp"
 
 void init_output_dir(std::string output_dir){
+  int errorCode=0;
   //delete old directory
   std::string stager("");
   stager = "rm -rf " + output_dir;
-  std::system(stager.c_str());
+  errorCode = std::max<int>(errorCode, std::system(stager.c_str()));
   //make a new one
   stager = "mkdir " + output_dir;
-  std::system(stager.c_str());
+  errorCode = std::max<int>(errorCode, std::system(stager.c_str()));
+  if (errorCode != 0){
+    std::cerr << "Error building output directory!" << std::endl;
+    assert(errorCode == 0);
+  }
 }
 
 void writeTraces(std::vector<std::vector<OnewayTrace>>& readTraces, 

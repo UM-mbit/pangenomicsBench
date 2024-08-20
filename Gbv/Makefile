@@ -1,3 +1,9 @@
+OMP_ENABLED?=0
+VTUNE_ENABLED?=0
+
+#Note this is tested on vtune 2024.1
+VTUNE_HOME=/opt/intel/oneapi/vtune/latest
+
 #this file is mostly canabilized from graphaligner. We're not linking 
 #Graphaligner as a library, we're pretty much building this kernal code 
 #thing as a part of graphaligner
@@ -12,8 +18,8 @@ EXE:=gbv
 
 CWD:=$(shell pwd)
 GA_ROOT:=$(CWD)/deps/GraphAligner
-CXXFLAGS:=-Wall -Wextra -std=c++17 -O3 -g3  -I$(SRC_DIR) -I$(GA_ROOT)/src -I$(GA_ROOT)/concurrentqueue -I$(GA_ROOT)/BBHash -I$(GA_ROOT)/zstr/src -I$(GA_ROOT)/parallel-hashmap/parallel_hashmap/ `pkg-config --cflags protobuf` `pkg-config --cflags libsparsehash` -Wno-unknown-pragmas -Wno-unused-parameter -I$(GA_ROOT)/MEMfinder/src -I`jemalloc-config --includedir` -I/opt/intel/oneapi/vtune/latest/include -I/home/kaplannp/miniconda3/envs/GraphAligner/include -I$(GA_ROOT)/include/json/single_include 
-LIBS=-lm -lz -lboost_program_options `pkg-config --libs protobuf` -lsdsl -L/usr/local/lib -L/opt/intel/oneapi/vtune/latest/lib64 -littnotify -lboost_serialization
+CXXFLAGS:=-Wall -Wextra -std=c++17 -O3 -g3  -I$(SRC_DIR) -I$(GA_ROOT)/src -I$(GA_ROOT)/concurrentqueue -I$(GA_ROOT)/BBHash -I$(GA_ROOT)/zstr/src -I$(GA_ROOT)/parallel-hashmap/parallel_hashmap/ `pkg-config --cflags protobuf` `pkg-config --cflags libsparsehash` -Wno-unknown-pragmas -Wno-unused-parameter -I$(GA_ROOT)/MEMfinder/src -I`jemalloc-config --includedir` -I/opt/intel/oneapi/vtune/latest/include -I/home/kaplannp/miniconda3/envs/GraphAligner/include -I$(GA_ROOT)/include/json/single_include -DOMP_ENABLED=$(OMP_ENABLED) -DVTUNE_ENABLED=$(VTUNE_ENABLED) -I$(CWD)/../SharedDeps/include
+LIBS=-lm -lz -lboost_program_options `pkg-config --libs protobuf` -lsdsl -L/usr/local/lib -L$(VTUNE_HOME)/lib64 -littnotify -lboost_serialization -ldl
 JEMALLOCFLAGS= -L`jemalloc-config --libdir` -Wl,-rpath,`jemalloc-config --libdir` -Wl,-Bstatic -ljemalloc -Wl,-Bdynamic `jemalloc-config --libs`
 _DEPS = vg.pb.h fastqloader.h GraphAlignerWrapper.h vg.pb.h BigraphToDigraph.h stream.hpp Aligner.h ThreadReadAssertion.h AlignmentGraph.h CommonUtils.h GfaGraph.h ReadCorrection.h MinimizerSeeder.h AlignmentSelection.h EValue.h MEMSeeder.h DNAString.h DiploidHeuristic.h
 DEPS = $(patsubst %, $(GA_ROOT)/src/%, $(_DEPS)) $(SRC_DIR)/eval.h $(SRC_DIR)/loadParams.h

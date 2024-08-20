@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <cstdlib>
 #include <vector>
+#include <omp.h>
 #include <chrono>
 
 #include "gssw.h"
@@ -26,8 +27,11 @@ int main(){
   
   std::cout << "Running Kernel" << std::endl;
   auto kernel_start = std::chrono::system_clock::now();
-  //For loop over reads.
-  for (int i=0; i < num_inputs; i++){
+  VTUNE_BEGIN
+#if (OMP_ENABLED==1)
+  #pragma omp parallel for
+#endif
+  for (int i=0; i < num_inputs; i++){ //loop over reads (or really anchors)
     //load inputs
     gssw_graph* graph = (*params)[i].graph;
     std::string seq = (*params)[i].seq;
@@ -48,8 +52,9 @@ int main(){
                             constants::save_matrixes );
 
   }
-  std::cout << "Kernel Complete" << std::endl;
   auto kernel_end = std::chrono::system_clock::now();
+  VTUNE_END
+  std::cout << "Kernel Complete" << std::endl;
 
   std::cout << "Writing Outputs" << std::endl;
   auto write_start = std::chrono::system_clock::now();

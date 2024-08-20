@@ -26,12 +26,21 @@ int main(){
   
   std::cout << "Running Kernel" << std::endl;
   auto kernel_start = std::chrono::system_clock::now();
-  //For loop over reads.
-  for (int i=0; i < numInputs; i++){
+  VTUNE_BEGIN
+#if (OMP_ENABLED==1)
+  #pragma omp parallel for
+#endif
+  for (int i=0; i < numInputs; i++){ //loop over queries
     std::vector<int>& query = (*queries)[i];
-    gbwtIndex->prefix(query.begin(), query.end());
+    //for (int j = 0; j < query.size(); j++){
+    //  std::cerr << query[j] << "<";
+    //}
+    //std::cerr << std::endl;
+    queryResults[i] = gbwtIndex->prefix(query.begin(), query.end());
+    std::cerr << queryResults[i].size() << std::endl;
   }
   std::cout << "Kernel Complete" << std::endl;
+  VTUNE_END
   auto kernel_end = std::chrono::system_clock::now();
   
   std::cout << "Writing Outputs" << std::endl;
