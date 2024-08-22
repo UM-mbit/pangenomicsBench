@@ -1,0 +1,3 @@
+Write a script to download this file
+https://software.intel.com/sites/landingpage/pintool/downloads/pin-external-3.31-98861-g71afcc22f-gcc-linux.tar.gz
+Extract it and move the MICA into it
