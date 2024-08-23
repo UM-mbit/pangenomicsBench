@@ -10,6 +10,8 @@
 #include "gbwt/algorithms.h"
 #include "vtuneConfigs.h"
 
+#include <cassert>
+
 
 #define OUT_DIR "Out" //NOTE, be responsible. rm -rf OUT_DIR is called
 
@@ -26,21 +28,42 @@ int main(int argc, char* argv[]){
   gbwt::GBWT* gbwtIndex = ldGbwt(inputDir);
   auto load_end = std::chrono::system_clock::now();
   
+  //debug
+  //for (int i = 0; i < 548; i++){
+  //  std::vector<gbwt::short_type> v = gbwtIndex->extract(0);
+  //  for (gbwt::short_type n : v){
+  //    std::cerr << n << ", ";
+  //  }
+  //  std::cerr << std::endl;
+  //}
+  std::vector<gbwt::node_type> q = {4036, 4038, 4040, 4042, 4044, 4046, 4048, 4050, 4052, 4054, 4056};
+  for (gbwt::node_type& n : q ){
+    n = gbwt::Node::encode(n, false);
+  }
+  std::cerr << "manicured " << gbwtIndex->prefix(q.begin(), q.end());
+  std::cerr << std::endl;
   VTUNE_BEGIN
   std::cout << "Running Kernel" << std::endl;
   auto kernel_start = std::chrono::system_clock::now();
-#if (OMP_ENABLED==1)
-  #pragma omp parallel for
-#endif
-  for (int i=0; i < numInputs; i++){ //loop over queries
-    std::vector<int>& query = (*queries)[i];
-    //for (int j = 0; j < query.size(); j++){
-    //  std::cerr << query[j] << "<";
-    //}
-    //std::cerr << std::endl;
-    queryResults[i] = gbwtIndex->prefix(query.begin(), query.end());
-    std::cerr << queryResults[i].size() << std::endl;
-  }
+//#if (OMP_ENABLED==1)
+//  #pragma omp parallel for
+//#endif
+//  for (int i=0; i < numInputs; i++){ //loop over queries
+//    std::vector<int>& query = (*queries)[i];
+//    for (int j = 0; j < query.size(); j++){
+//      std::cerr << query[j] << "<";
+//      gbwt::node_type node = query[j];
+//      //assert ((index).contains(static_cast<gbwt::node_type>(node))); //the node should always be in graph
+//    }
+//    //std::vector<int> doubleTime{};
+//    //for (int j=0; j < query.size(); j+=2){
+//    //  doubleTime.push_back(query[j]);
+//    //}
+//    //query = doubleTime;
+//    std::cerr << std::endl;
+//    queryResults[i] = gbwtIndex->prefix(query.begin(), query.end());
+//    std::cerr << queryResults[i].size() << std::endl;
+//  }
   auto kernel_end = std::chrono::system_clock::now();
   std::cout << "Kernel Complete" << std::endl;
   VTUNE_END

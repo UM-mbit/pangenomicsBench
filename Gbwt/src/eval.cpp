@@ -24,6 +24,8 @@ void init_output_dir(std::string output_dir){
     std::cerr << "Error building output directory!" << std::endl;
     assert(errorCode == 0);
   }
+}
+
 std::string searchStateToStr(gbwt::SearchState state){
   std::stringstream ss;
   ss << state.node << ": (" << std::get<0>(state.range) << "," << std::get<1>(state.range) << ")";
