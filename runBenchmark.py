@@ -89,6 +89,7 @@ class CacheReportParser:
         outStr = ""
         total = data["ALL_LOADS"]
         data /= total
+        outStr += "total {}\n".format(total)
         for key, val in data.items():
             outStr += "{} {}\n".format(key, val)
         return outStr
@@ -163,8 +164,8 @@ class Runner:
         and report in reportDir/uarchSum.txt
         final stats in resultsDir/uarchStats.txt
         '''
-        execAndLog("{} -collect uarch-exploration -start-paused -data-limit=500 -result-dir {}/Uarch {} 2>&1 | tee {}/uarch.log".format(self.vtune, self.outDir, app, self.logDir))
-        execAndLog("{} -report summary -inline-mode on -r {}/Uarch -report-output {}/uarchSum.txt".format(self.vtune, self.outDir, self.reportDir))
+        execAndLog("{} -collect uarch-exploration -knob sampling-interval=.1 -start-paused -data-limit=500 -result-dir {}/Uarch {} 2>&1 | tee {}/uarch.log".format(self.vtune, self.profileDir, app, self.logDir))
+        execAndLog("{} -report summary -inline-mode on -r {}/Uarch -report-output {}/uarchSum.txt".format(self.vtune, self.profileDir, self.reportDir))
         #extract important stats from vtune report and write to the result dir
         stats = self.uarchReportParser.parseUarchReport(
                   os.path.join(self.reportDir,"uarchSum.txt"))
@@ -194,12 +195,14 @@ class Runner:
         """
         METRICS=self.getCacheCollectionMetrics()
         FLAGS="-collect-with runsa \
+               -start-paused \
                -knob event-config={} \
                -knob process-kernel-binaries=true \
                -knob stack-size=16384 \
                -knob max-region-duration=1000 \
                -knob enable-user-tasks=true \
                -finalization-mode=full \
+               -knob sampling-interval=.1 \
                -inline-mode=on".format(METRICS)
         return FLAGS
 
@@ -230,6 +233,47 @@ class Runner:
             oFile.write(stats);
 
     
+    def formatMicaOutput(self):
+        '''
+        Assuming MICA files in cwd, this generates instrCounts.txt from
+        ityped_full_int_pin.out. instrCounts is labeled, and reports in terms of
+        percentages instead of counts
+        '''
+        with open("itypes_full_int_pin.out", 'r') as iFile:
+            data = iFile.read().split(" ")
+            with open("instrCounts.txt", 'w') as oFile:
+                countNames = ["Count", "Memory", "Control", "Scalar", 
+                         "FpScalar", "Nop", "Register", "Vector"]
+                total = 0;
+                for name, val in zip(countNames, data[:len(countNames)]):
+                    if (name == "Count"):
+                        total = int(val)
+                    else:
+                        val = int(val) / total #used to get a percentage
+                    oFile.write("{} {}\n".format(name, val))
+
+    def runVanillaApp(self, app):
+        '''
+        runs vanilla application to collect outputs in KernelOuts
+        log in logDir/vanillaApp.log
+        final stats in resultsDir/vanillaRunTimes.txt
+        '''
+        execAndLog("{} 2>&1 | tee {}".format(
+            app, 
+            os.path.join(self.logDir, "vanillaApp.log")))
+        #move the ouput, kernels always generate Out/ in cwd
+        os.rename("Out", os.path.join(self.kernelOutputDir, "Out"))
+
+        #run regex to get the timing from the output
+        with open(os.path.join(self.logDir,"vanillaApp.log"), 'r') as iFile:
+            strLog = iFile.read()
+            matches = re.findall(r"(load|kernel|write) time: (\d*us)", strLog)
+        #write the output to file
+        with open(os.path.join(self.resultsDir,"vanillaRunTimes.txt"),'w') as wFile:
+            for match in matches:
+                wFile.write("{} {}\n".format(match[0], match[1]))
+
+
 
     def runPinInstrCount(self, app):
         """
@@ -248,13 +292,7 @@ class Runner:
         #run pin
         execAndLog("{} -t {} -- {}".format(self.pin, self.micaLib, app))
         # parse the cryptic mica file to get the outputs
-        with open("itypes_full_int_pin.out", 'r') as iFile:
-            data = iFile.read().split(" ")
-            with open("instrCounts.txt", 'w') as oFile:
-                countNames = ["Count", "Memory", "Control", "Scalar", 
-                         "FpScalar", "Nop", "Register", "Vector"]
-                for name, val in zip(countNames, data[:len(countNames)]):
-                    oFile.write("{} {}\n".format(name, val))
+        self.formatMicaOutput()
         #move all the outputs
         os.rename("itypes_full_int_pin.out",
                 os.path.join(micaOut,"itypes_full_int_pin.out"))
@@ -277,6 +315,15 @@ class Runner:
         shutil.copy(os.path.join(micaOut,"instrCounts.txt"), 
                 os.path.join(self.resultsDir, "instrCounts.txt"))
 
+    def printResults(self):
+        '''
+        just convenience for oupting the results that you've generated at the 
+        end of the script
+        '''
+        for filename in os.listdir(self.resultsDir):
+            os.system("cat {}".format(os.path.join(self.resultsDir, filename)))
+            os.system("echo")
+
 
 def execAndLog(cmd):
     print("executing: {}".format(cmd))
@@ -288,9 +335,11 @@ if __name__ == "__main__":
     app="./Dummy/bin/dummy /data2/kaplannp/Genomics/Datasets/Kernels/Dummy"
     execAndLog("rm -rf {}".format(outDir))
     runner = Runner(outDir)
+    runner.runVanillaApp(app)
+    runner.runPinInstrCount(app)
+    runner.runVtuneUarch(app)
     runner.runVtuneCache(app)
-    #runner.runPinInstrCount(app)
-    #runner.runVtuneUarch(app)
+    runner.printResults()
     #outDir="GbwtOut"
     #app="./Gbwt/bin/gbwt /data2/kaplannp/Genomics/Datasets/Kernels/smallGbwt"
     #execAndLog("rm -rf {}".format(outDir))
