@@ -7,6 +7,14 @@
 #include "gbwt/gbwt.h"
 #include "gbwt/algorithms.h"
 
+/*
+ * returns the first argment on the command line. This should be the directory
+ * of the input files
+ * @param int argc as passed to main
+ * @param char* argv as passed to main
+ * @return string the 1st command line arg, should be input dir
+ */
+std::string parseArgs(int argc, char* argv[]);
 
 /*
  * loads in queries from a file

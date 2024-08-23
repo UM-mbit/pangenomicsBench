@@ -1,3 +1,9 @@
+OMP_ENABLED?=0
+VTUNE_ENABLED?=0
+
+#Note this is tested on vtune 2024.1
+VTUNE_HOME=/opt/intel/oneapi/vtune/latest
+
 SRC_DIR:=src
 BIN_DIR:=bin
 
@@ -15,7 +21,7 @@ OBJ_FILES := $(SRC_DIR)/loadParams.o $(SRC_DIR)/main.o $(SRC_DIR)/eval.o
 all: $(BIN_DIR)/$(EXE)
 
 %.o: %.cpp
-	$(CXX) $(CXXCFLAGS)  $(INCLUDE_FLAGS) -c -o $@ $<
+	$(CXX) $(CXXFLAGS)  $(INCLUDE_FLAGS) -c -o $@ $<
 
 $(BIN_DIR)/$(EXE): $(OBJ_FILES)
 	$(CXX) $(INCLUDE_FLAGS) -o $@ $^ $(LD_LIB_DIR_FLAGS) $(LD_LIB_FLAGS) 
