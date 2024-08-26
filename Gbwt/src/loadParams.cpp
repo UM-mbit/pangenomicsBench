@@ -41,6 +41,12 @@ std::vector<std::vector<gbwt::node_type>>* loadQueries(std::string inputDir, int
     }
     i++;
   }
+  //Now that you've loaded everything, encode the nodes
+  for (std::vector<gbwt::node_type>& query : *queries){
+    for (gbwt::node_type& n : query){
+      n = gbwt::Node::encode(n, false);
+    }
+  }
   return queries;
 }
 
