@@ -87,10 +87,17 @@ int main(int argc, char* argv[]){
   #pragma omp parallel for
 #endif
   for (int i=0; i < N_ITERS; i++){
+    //allocate a huge amount of memory to get some interesting cache behaviour
+    int BIGARRSIZE=10000000;
+    int* bigArr = new int[BIGARRSIZE];
     int y = std::rand();
     if (y%2 == 0){
-      x += std::rand();
+      bigArr[y%BIGARRSIZE] = std::rand();
+      y = bigArr[std::rand()/BIGARRSIZE];
+      x += y;
+      y = std::rand();
     }
+    delete bigArr;
   }
   auto kernel_end = std::chrono::system_clock::now();
   std::cout << "Kernel Complete" << std::endl;

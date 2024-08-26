@@ -1,11 +1,18 @@
 import os
 import shutil
 import re
+import pandas as pd
 
 HOME="." # this is the root directory of the pangenomicsBench
 
 
 class UarchReportParser:
+    """
+    Class for parsing a uarch report. It extracts cpi, retiring, frontent bound
+    core bound, bad spec, and mem bound.
+    It's essentially a bunch of grep functions and one function for getting
+    everything and pretty formating
+    """
 
     def getCpi(self, s):
         return float(re.search(r"CPI Rate: (\d+\.\d+)", s).groups()[0])
@@ -45,6 +52,55 @@ class UarchReportParser:
             data = iFile.read();
         return data
 
+'''
+This is quite brittle. If you're reading this, you should probably just start
+from scratch.
+It produces a list of tuples with name and the value of that hw counter
+'''
+
+class CacheReportParser:
+    '''
+    This one is spaghetti code, sorry. It should work though. 
+    '''
+    def generateTupleList(self, dataFile):
+        data = ""
+
+        with open(dataFile, 'r') as rFile:
+            data = rFile.read()
+
+        PREFIX = r"MEM_LOAD_RETIRED\."
+        METRICS = ["L1_HIT", "L1_MISS", "L2_HIT", "L2_MISS", "L3_HIT", "L3_MISS",
+        "FB_HIT"]
+
+        results = []
+        for reQuery in [r"{}({}) *(\d*)".format(PREFIX, metric) for metric in METRICS]:
+            results.append(re.search(reQuery, data).groups())
+        results.append(("DRAM_HIT", re.search(
+            r'MEM_LOAD_L3_MISS_RETIRED\.LOCAL_DRAM *(\d*)', data).groups()[0]))
+        results.append(("ALL_LOADS", re.search(
+            r'MEM_INST_RETIRED\.ALL_LOADS *(\d*)', data).groups()[0]))
+        return pd.Series({key:val for key, val in results}, dtype=int)
+
+    def formatSeriesOut(self, data):
+        '''
+        formats the tuple list output of generateTupleList. Might be destructive
+        of the series
+        '''
+        outStr = ""
+        total = data["ALL_LOADS"]
+        data /= total
+        outStr += "total {}\n".format(total)
+        for key, val in data.items():
+            outStr += "{} {}\n".format(key, val)
+        return outStr
+    
+    def parseCacheReport(self, dataFile):
+        '''
+        Parses the cache data and returns a string nicely formated of useful
+        information
+        '''
+        print(self.generateTupleList(dataFile))
+        return self.formatSeriesOut(self.generateTupleList(dataFile))
 
 class Runner:
 
@@ -69,6 +125,7 @@ class Runner:
         self.micaSpec = os.path.join(HOME, pinLocalPath, 
                 "source/tools/MICA-Pausable/itypes_custom.spec")
         self.uarchReportParser = UarchReportParser()
+        self.cacheReportParser = CacheReportParser()
 
     def setupOutputDir(self, outDir):
         """
@@ -105,20 +162,118 @@ class Runner:
         initializes the uarch profile in profileDir/Uarch
         and a log in logDir/uarch.log
         and report in reportDir/uarchSum.txt
+        final stats in resultsDir/uarchStats.txt
         '''
-        execAndLog("{} -collect uarch-exploration -start-paused -data-limit=500 -result-dir {}/Uarch {} 2>&1 | tee {}/uarch.log".format(self.vtune, self.outDir, app, self.logDir))
-        execAndLog("{} -report summary -inline-mode on -r {}/Uarch -report-output {}/uarchSum.txt".format(self.vtune, self.outDir, self.reportDir))
+        execAndLog("{} -collect uarch-exploration -knob sampling-interval=.1 -start-paused -data-limit=500 -result-dir {}/Uarch {} 2>&1 | tee {}/uarch.log".format(self.vtune, self.profileDir, app, self.logDir))
+        execAndLog("{} -report summary -inline-mode on -r {}/Uarch -report-output {}/uarchSum.txt".format(self.vtune, self.profileDir, self.reportDir))
         #extract important stats from vtune report and write to the result dir
         stats = self.uarchReportParser.parseUarchReport(
                   os.path.join(self.reportDir,"uarchSum.txt"))
         with open(os.path.join(self.resultsDir, "uarchStats.txt"),'w') as oFile:
             oFile.write(stats);
 
-    def runVtuneCache(self):
+    def getCacheCollectionMetrics(self):
         """
+        This is a constant, it's just more readable here. These are the PMU
+        events we need to pass to intel. (google intel PMU)
         """
-        pass
+        METRICS="MEM_INST_RETIRED.ALL_LOADS,"
+        METRICS+="MEM_LOAD_RETIRED.L1_HIT,"
+        METRICS+="MEM_LOAD_RETIRED.L1_MISS,"
+        METRICS+="MEM_LOAD_RETIRED.FB_HIT,"
+        METRICS+="MEM_LOAD_RETIRED.L2_HIT,"
+        METRICS+="MEM_LOAD_RETIRED.L2_MISS,"
+        METRICS+="MEM_LOAD_RETIRED.L3_HIT,"
+        METRICS+="MEM_LOAD_RETIRED.L3_MISS,"
+        METRICS+="MEM_LOAD_L3_MISS_RETIRED.LOCAL_DRAM,"
+        return METRICS
+
+    def getCacheCollectionFlags(self):
+        """
+        This is a constant, it's just more readable here. These are flags for a
+        cache analysis
+        """
+        METRICS=self.getCacheCollectionMetrics()
+        FLAGS="-collect-with runsa \
+               -start-paused \
+               -knob event-config={} \
+               -knob process-kernel-binaries=true \
+               -knob stack-size=16384 \
+               -knob max-region-duration=1000 \
+               -knob enable-user-tasks=true \
+               -finalization-mode=full \
+               -knob sampling-interval=.1 \
+               -inline-mode=on".format(METRICS)
+        return FLAGS
+
+    def runVtuneCache(self, app):
+        """
+        runs vtune profiling to collect cache statistics in profileDir/Cache
+        log in logDir/cache.log
+        report in reportDir/cachSum.txt
+        final stats in resultsDir/cacheStats.txt
+        """
+        FLAGS=self.getCacheCollectionFlags()
+        #run the profiling
+        execAndLog("{} {} -result-dir {} {} 2>&1 | tee {}".format(
+                        self.vtune,
+                        FLAGS,
+                        os.path.join(self.profileDir, "Cache"),
+                        app,
+                        os.path.join(self.logDir, "cache.log")))
+        #generate a report summary. Note, I've tried -report output, for some
+        #reason only > works
+        execAndLog("{} -report summary -r {} > {}".format(
+                self.vtune, 
+                os.path.join(self.profileDir, "Cache"),
+                os.path.join(self.reportDir, "cacheSum.txt")))
+        stats = self.cacheReportParser.parseCacheReport(
+                os.path.join(self.reportDir,"cacheSum.txt"))
+        with open(os.path.join(self.resultsDir, "cacheStats.txt"),'w') as oFile:
+            oFile.write(stats);
+
     
+    def formatMicaOutput(self):
+        '''
+        Assuming MICA files in cwd, this generates instrCounts.txt from
+        ityped_full_int_pin.out. instrCounts is labeled, and reports in terms of
+        percentages instead of counts
+        '''
+        with open("itypes_full_int_pin.out", 'r') as iFile:
+            data = iFile.read().split(" ")
+            with open("instrCounts.txt", 'w') as oFile:
+                countNames = ["Count", "Memory", "Control", "Scalar", 
+                         "FpScalar", "Nop", "Register", "Vector"]
+                total = 0;
+                for name, val in zip(countNames, data[:len(countNames)]):
+                    if (name == "Count"):
+                        total = int(val)
+                    else:
+                        val = int(val) / total #used to get a percentage
+                    oFile.write("{} {}\n".format(name, val))
+
+    def runVanillaApp(self, app):
+        '''
+        runs vanilla application to collect outputs in KernelOuts
+        log in logDir/vanillaApp.log
+        final stats in resultsDir/vanillaRunTimes.txt
+        '''
+        execAndLog("{} 2>&1 | tee {}".format(
+            app, 
+            os.path.join(self.logDir, "vanillaApp.log")))
+        #move the ouput, kernels always generate Out/ in cwd
+        os.rename("Out", os.path.join(self.kernelOutputDir, "Out"))
+
+        #run regex to get the timing from the output
+        with open(os.path.join(self.logDir,"vanillaApp.log"), 'r') as iFile:
+            strLog = iFile.read()
+            matches = re.findall(r"(load|kernel|write) time: (\d*us)", strLog)
+        #write the output to file
+        with open(os.path.join(self.resultsDir,"vanillaRunTimes.txt"),'w') as wFile:
+            for match in matches:
+                wFile.write("{} {}\n".format(match[0], match[1]))
+
+
 
     def runPinInstrCount(self, app):
         """
@@ -137,13 +292,7 @@ class Runner:
         #run pin
         execAndLog("{} -t {} -- {}".format(self.pin, self.micaLib, app))
         # parse the cryptic mica file to get the outputs
-        with open("itypes_full_int_pin.out", 'r') as iFile:
-            data = iFile.read().split(" ")
-            with open("instrCounts.txt", 'w') as oFile:
-                countNames = ["Count", "Memory", "Control", "Scalar", 
-                         "FpScalar", "Nop", "Register", "Vector"]
-                for name, val in zip(countNames, data[:len(countNames)]):
-                    oFile.write("{} {}\n".format(name, val))
+        self.formatMicaOutput()
         #move all the outputs
         os.rename("itypes_full_int_pin.out",
                 os.path.join(micaOut,"itypes_full_int_pin.out"))
@@ -166,6 +315,15 @@ class Runner:
         shutil.copy(os.path.join(micaOut,"instrCounts.txt"), 
                 os.path.join(self.resultsDir, "instrCounts.txt"))
 
+    def printResults(self):
+        '''
+        just convenience for oupting the results that you've generated at the 
+        end of the script
+        '''
+        for filename in os.listdir(self.resultsDir):
+            os.system("cat {}".format(os.path.join(self.resultsDir, filename)))
+            os.system("echo")
+
 
 def execAndLog(cmd):
     print("executing: {}".format(cmd))
@@ -177,8 +335,11 @@ if __name__ == "__main__":
     app="./Dummy/bin/dummy /data2/kaplannp/Genomics/Datasets/Kernels/Dummy"
     execAndLog("rm -rf {}".format(outDir))
     runner = Runner(outDir)
+    runner.runVanillaApp(app)
     runner.runPinInstrCount(app)
     runner.runVtuneUarch(app)
+    runner.runVtuneCache(app)
+    runner.printResults()
     #outDir="GbwtOut"
     #app="./Gbwt/bin/gbwt /data2/kaplannp/Genomics/Datasets/Kernels/smallGbwt"
     #execAndLog("rm -rf {}".format(outDir))
