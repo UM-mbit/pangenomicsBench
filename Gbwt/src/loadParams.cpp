@@ -26,9 +26,9 @@ std::string parseArgs(int argc, char* argv[]){
   return "";
 }
 
-std::vector<std::vector<int>>* loadQueries(std::string inputDir, int numInputs){
-  std::vector<std::vector<int>>* queries = 
-      new std::vector<std::vector<int>>(numInputs);
+std::vector<std::vector<gbwt::node_type>>* loadQueries(std::string inputDir, int numInputs){
+  std::vector<std::vector<gbwt::node_type>>* queries = 
+      new std::vector<std::vector<gbwt::node_type>>(numInputs);
 
   std::ifstream f(inputDir+"/Inputs/queries.txt");
   std::string line("");

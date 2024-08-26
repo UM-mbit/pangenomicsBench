@@ -21,7 +21,7 @@ std::string parseArgs(int argc, char* argv[]);
  * @param string inDir, the root directory of the Inputs
  * @return vector<vector<int>> each vector<int> is a list of node ids (a query)
  */
-std::vector<std::vector<int>>* loadQueries(std::string inputDir, int numInputs);
+std::vector<std::vector<gbwt::node_type>>* loadQueries(std::string inputDir, int numInputs);
 
 /*
  * loads in the gbwt from a file
