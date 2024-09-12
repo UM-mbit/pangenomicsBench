@@ -15,9 +15,6 @@
 [submodule "sdsl-lite"]
 	path = Gbwt/deps/sdsl-lite
 	url = git@github.com:vgteam/sdsl-lite.git
-[submodule "MICA-Pausable"]
-	path = ProfilingTools/MICA-Pausable
-	url = git@github.com:kaplannp/MICA-Pausable.git
 [submodule "minigraphDumper"]
 	path = Gwfa/deps/minigraphDumper
 	url = git@github.com:kaplannp/minigraph.git
@@ -26,3 +23,6 @@
 	path = Gwfa/deps/minigraphKernel
 	url = git@github.com:kaplannp/minigraph.git
 	branch = kernel
+[submodule "OneStopProfileShop"]
+	path = ProfileScripts
+	url = git@github.com:kaplannp/OneStopProfileShop.git
