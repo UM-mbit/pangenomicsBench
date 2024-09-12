@@ -18,3 +18,11 @@
 [submodule "MICA-Pausable"]
 	path = ProfilingTools/MICA-Pausable
 	url = git@github.com:kaplannp/MICA-Pausable.git
+[submodule "minigraphDumper"]
+	path = Gwfa/deps/minigraphDumper
+	url = git@github.com:kaplannp/minigraph.git
+	branch = serialization
+[submodule "minigraphKernel"]
+	path = Gwfa/deps/minigraphKernel
+	url = git@github.com:kaplannp/minigraph.git
+	branch = kernel
