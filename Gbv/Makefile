@@ -20,7 +20,7 @@ PROF_UTILS=$(CWD)/../ProfileScripts/RoiCppHeaders
 CWD:=$(shell pwd)
 GA_ROOT:=$(CWD)/deps/GraphAligner
 CXXFLAGS:=-Wall -Wextra -std=c++17 -O3 -g3  -I$(SRC_DIR) -I$(GA_ROOT)/src -I$(GA_ROOT)/concurrentqueue -I$(GA_ROOT)/BBHash -I$(GA_ROOT)/zstr/src -I$(GA_ROOT)/parallel-hashmap/parallel_hashmap/ `pkg-config --cflags protobuf` `pkg-config --cflags libsparsehash` -Wno-unknown-pragmas -Wno-unused-parameter -I$(GA_ROOT)/MEMfinder/src -I`jemalloc-config --includedir` -I/opt/intel/oneapi/vtune/latest/include -I/home/kaplannp/miniconda3/envs/GraphAligner/include -I$(GA_ROOT)/include/json/single_include -DOMP_ENABLED=$(OMP_ENABLED) -DVTUNE_ENABLED=$(VTUNE_ENABLED) -I$(PROF_UTILS)/include
-LIBS=-L$(PROF_UTILS)/lib -lm -lz -lboost_program_options `pkg-config --libs protobuf` -lsdsl -L/usr/local/lib -L$(VTUNE_HOME)/lib64 -lprofileUtils -littnotify -lboost_serialization -ldl
+LIBS=-L$(PROF_UTILS)/lib -lm -lz -lboost_program_options `pkg-config --libs protobuf` -lsdsl -L/usr/local/lib -L$(VTUNE_HOME)/lib64 -lprofileUtils -littnotify -lboost_serialization -fopenmp
 JEMALLOCFLAGS= -L`jemalloc-config --libdir` -Wl,-rpath,`jemalloc-config --libdir` -Wl,-Bstatic -ljemalloc -Wl,-Bdynamic `jemalloc-config --libs`
 _DEPS = vg.pb.h fastqloader.h GraphAlignerWrapper.h vg.pb.h BigraphToDigraph.h stream.hpp Aligner.h ThreadReadAssertion.h AlignmentGraph.h CommonUtils.h GfaGraph.h ReadCorrection.h MinimizerSeeder.h AlignmentSelection.h EValue.h MEMSeeder.h DNAString.h DiploidHeuristic.h
 DEPS = $(patsubst %, $(GA_ROOT)/src/%, $(_DEPS)) $(SRC_DIR)/eval.h $(SRC_DIR)/loadParams.h
@@ -52,22 +52,22 @@ $(BIN_DIR)/$(EXE): $(OBJ_FILES_SINGLE) $(GA_ROOT)/MEMfinder/lib/memfinder.a
 
 #BEGIN ROI MULTI THREADED
 $(OBJ_DIR)/eval.cpp.omp.o: src/eval.cpp $(DEPS)
-	$(CXX) -c -o $@ $< $(CXXFLAGS)
+	$(CXX) -c -o $@ $< $(CXXFLAGS) -DTHREADING_ENABLED=1 -DTIMER_ENABLED=1
 $(OBJ_DIR)/loadParams.cpp.omp.o: src/loadParams.cpp $(DEPS)
-	$(CXX) -c -o $@ $< $(CXXFLAGS)
+	$(CXX) -c -o $@ $< $(CXXFLAGS) -DTHREADING_ENABLED=1 -DTIMER_ENABLED=1
 $(OBJ_DIR)/main.cpp.omp.o: src/main.cpp $(DEPS)
-	$(CXX) -c -o $@ $< $(CXXFLAGS)
+	$(CXX) -c -o $@ $< $(CXXFLAGS) -DTHREADING_ENABLED=1 -DTIMER_ENABLED=1
 $(BIN_DIR)/$(EXE).omp: $(OBJ_FILES_OMP) $(GA_ROOT)/MEMfinder/lib/memfinder.a
 	$(CXX) -o $@ $^ $(LINKFLAGS)
 #END ROI MULTI THREADED
 
 #BEGIN ROI PROF
 $(OBJ_DIR)/eval.cpp.prof.o: src/eval.cpp $(DEPS)
-	$(CXX) -c -o $@ $< $(CXXFLAGS)
+	$(CXX) -c -o $@ $< $(CXXFLAGS) -DVTUNE_ENABLED=1 -DPIN_ENABLED=1 -DTIMER_ENABLED=1
 $(OBJ_DIR)/loadParams.cpp.prof.o: src/loadParams.cpp $(DEPS)
-	$(CXX) -c -o $@ $< $(CXXFLAGS)
+	$(CXX) -c -o $@ $< $(CXXFLAGS) -DVTUNE_ENABLED=1 -DPIN_ENABLED=1 -DTIMER_ENABLED=1
 $(OBJ_DIR)/main.cpp.prof.o: src/main.cpp $(DEPS)
-	$(CXX) -c -o $@ $< $(CXXFLAGS)
+	$(CXX) -c -o $@ $< $(CXXFLAGS) -DVTUNE_ENABLED=1 -DPIN_ENABLED=1 -DTIMER_ENABLED=1
 $(BIN_DIR)/$(EXE).prof: $(OBJ_FILES_PROF) $(GA_ROOT)/MEMfinder/lib/memfinder.a
 	$(CXX) -o $@ $^ $(LINKFLAGS)
 #END ROI PROF
