@@ -10,7 +10,7 @@
 #include "gssw.h"
 #include "loadParams.h"
 #include "eval.h"
-#include "vtuneConfigs.h"
+#include "profilingUtils.h"
 
 #define OUT_DIR "Out" //NOTE, be responsible. rm -rf OUT_DIR is called
 
@@ -26,11 +26,13 @@ int main(int argc, char* argv[]){
       load_read_alignment_params(num_inputs, inputDir);
   auto load_end = std::chrono::system_clock::now();
   
-  VTUNE_BEGIN
+  BEGIN_ROI
   std::cout << "Running Kernel" << std::endl;
   auto kernel_start = std::chrono::system_clock::now();
-#if (OMP_ENABLED==1)
-  #pragma omp parallel for
+#if (THREADING_ENABLED==1)
+  #pragma omp parallel 
+  printf("launching thread %d\n",omp_get_thread_num());
+  #pragma omp for
 #endif
   for (int i=0; i < num_inputs; i++){ //loop over reads (or really anchors)
     //load inputs
@@ -55,7 +57,7 @@ int main(int argc, char* argv[]){
   }
   auto kernel_end = std::chrono::system_clock::now();
   std::cout << "Kernel Complete" << std::endl;
-  VTUNE_END
+  END_ROI
 
   std::cout << "Writing Outputs" << std::endl;
   auto write_start = std::chrono::system_clock::now();
