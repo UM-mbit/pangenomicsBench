@@ -8,7 +8,7 @@ BIN_DIR:=bin
 OBJ_DIR:=obj
 
 CXX ?= g++
-EXE:=dummy
+EXE:=cacheUBenchmark
 
 
 PROF_UTILS=$(CWD)/../ProfileScripts/RoiCppHeaders

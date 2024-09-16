@@ -8,8 +8,7 @@
 #include <omp.h>
 #include <chrono>
 
-#include "vtuneConfigs.h"
-#include "pinRoi.h"
+#include "profilingUtils.h"
 
 #define N_ITERS 1000000
 
@@ -78,13 +77,14 @@ int main(int argc, char* argv[]){
   doWork();
   auto load_end = std::chrono::system_clock::now();
 
-  BEGIN_PIN_ROI
-  VTUNE_BEGIN
+  BEGIN_ROI
   std::cout << "Running Kernel" << std::endl;
   auto kernel_start = std::chrono::system_clock::now();
   std::srand(seed);
-#if (OMP_ENABLED==1)
-  #pragma omp parallel for
+#if (THREADING_ENABLED==1)
+  #pragma omp parallel 
+  printf("launching thread %d\n",omp_get_thread_num());
+  #pragma omp for
 #endif
   for (int i=0; i < N_ITERS; i++){
     //allocate a huge amount of memory to get some interesting cache behaviour
@@ -101,8 +101,7 @@ int main(int argc, char* argv[]){
   }
   auto kernel_end = std::chrono::system_clock::now();
   std::cout << "Kernel Complete" << std::endl;
-  VTUNE_END
-  END_PIN_ROI
+  END_ROI
 
   std::cout << "Writing Outputs" << std::endl;
   auto write_start = std::chrono::system_clock::now();
