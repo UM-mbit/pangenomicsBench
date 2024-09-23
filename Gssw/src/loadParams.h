@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "gssw.h"
+#include "nlohmann/json.hpp"
  
 namespace constants{
   const uint8_t weight_gapO = 6;
@@ -68,10 +69,9 @@ int8_t* get_score_matrix();
 /*
  * Load the gssw graph for this iteration
  * @param string inDir, the root directory of the Inputs
- * @param int ind, the index of this iteration
  * @retun gssw_graph*, ptr the loaded graph
  */
-gssw_graph* ld_gssw_graph(std::string in_dir, int ind);
+nlohmann::json* ld_gssw_graph(std::string in_dir);
 
 /*
  * Load the sequence for this iteration

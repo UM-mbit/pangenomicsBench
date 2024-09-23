@@ -9,11 +9,11 @@
 #include "nlohmann/json.hpp"
 #include "gssw_to_json.hpp"
 
-void write_ggm(std::string out_dir, int ind, gssw_graph_mapping* ggm){
+void write_ggm(std::string out_dir, gssw_graph_mapping* ggm){
   std::string stager("");
-  stager = out_dir + "/mapping"+std::to_string(ind)+".json";
+  stager = out_dir + "/mapping.json";
   FILE* out_file;
-  out_file = fopen(stager.c_str(), "w");
+  out_file = fopen(stager.c_str(), "a");
   gssw_print_graph_mapping(ggm, out_file);
   fclose(out_file);
 }

@@ -80,7 +80,7 @@ int main(int argc, char* argv[]){
                                    constants::start_full_length_bonus,
                                    constants::end_full_length_bonus);
     //write outputs
-    write_ggm(OUT_DIR, i, ggm);
+    write_ggm(OUT_DIR, ggm);
   
     //cleanup
     gssw_graph_mapping_destroy(ggm);

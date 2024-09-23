@@ -36,8 +36,9 @@ std::vector<ReadAlignmentParams>* load_read_alignment_params(size_t num_inputs,
   std::vector<ReadAlignmentParams>* params = 
          new std::vector<ReadAlignmentParams>(num_inputs);
 
+  nlohmann::json* graphs = ld_gssw_graph(input_dir);
   for (int i = 0; i < num_inputs; i++){
-    (*params)[i].graph = ld_gssw_graph(input_dir, i);
+    (*params)[i].graph = ld_graph((*graphs)[i]);
     std::string seq = ld_seq(input_dir, i);
     (*params)[i].seq = seq;
     (*params)[i].nt_table = get_nt_table(seq.size());
@@ -67,18 +68,16 @@ int8_t* get_score_matrix(){
   return score_matrix;
 }
 
-gssw_graph* ld_gssw_graph(std::string in_dir, int ind){
+nlohmann::json* ld_gssw_graph(std::string in_dir){
   //std::cerr << "about to open the file" << std::endl;
-  std::ifstream f(in_dir+"/Inputs/Graphs/g"+std::to_string(ind)+".json");
+  std::ifstream f(in_dir+"/Inputs/graph.json");
   //std::cerr << in_dir+"/Inputs/Graphs/g"+std::to_string(ind)+".json" << std::endl;
   if (!f.is_open()) {
               throw std::runtime_error("Could not open file");
   }
-  nlohmann::json data = nlohmann::json::parse(f);
-  //std::cerr << data << std::endl;
-  gssw_graph* graph = ld_graph(data);
-  //gssw_graph_print(graph);
-  return graph;
+  nlohmann::json* data = new nlohmann::json();
+  *data = nlohmann::json::parse(f);
+  return data;
 }
 
 
