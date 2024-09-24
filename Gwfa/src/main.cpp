@@ -3,6 +3,7 @@
 #include <chrono>
 #include <string>
 #include <omp.h>
+#include <algorithm>
 #include "gfa.h"
 #include "gfa-priv.h"
 #include "kalloc.h"
@@ -12,7 +13,8 @@
 #define OUT_DIR "Out" //NOTE, be responsible. rm -rf OUT_DIR is called
 
 int main(int argc, char* argv[]){
-  std::string inputDir = parseArgs(argc, argv);
+  std::string inputDir = getInputDirFromArgs(argc, argv);
+  int num_iter_override = getNumItersFromArgs(argc, argv);
 
   init_output_dir(OUT_DIR);
 
@@ -42,6 +44,8 @@ int main(int argc, char* argv[]){
 
   auto load_end = std::chrono::system_clock::now();
 
+  int numIters = std::min((int) zBuff->size(), num_iter_override);
+
   //DEBUG
   //gfa_print(graph, stdout, 0);
   
@@ -53,18 +57,13 @@ int main(int argc, char* argv[]){
   printf("launching thread %d\n",omp_get_thread_num());
   #pragma omp for
 #endif
-  for (int i=0; i < zBuff->size(); i++){ //loop over reads (or really anchors)
-                                        //Note zbuff is same size as others
+  for (int i=0; i < numIters; i++){ //loop over reads (or really anchors)
     //run the kernel
     gfa_ed_step((*zBuff)[i],
                 (*v1Buff)[i],
                 (*end1Buff)[i],
                 GDP_MAX_ED,
                 &(results[i]));
-    //std::cerr << (*zBuff)[i],
-    //std::cerr << "v1 " << (*v1Buff)[i] << std::endl;
-    //std::cerr << "end1 " << (*end1Buff)[i] << std::endl;
-    //std::cerr << "max " << GDP_MAX_ED << std::endl;
   }
   auto kernel_end = std::chrono::system_clock::now();
   std::cout << "Kernel Complete" << std::endl;
@@ -72,7 +71,7 @@ int main(int argc, char* argv[]){
 
   std::cout << "Writing Outputs" << std::endl;
   auto write_start = std::chrono::system_clock::now();
-  writeResults(&results, OUT_DIR);
+  writeResults(&results, OUT_DIR, numIters);
   auto write_end = std::chrono::system_clock::now();
   
   //write the timing breakdown

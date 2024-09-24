@@ -5,9 +5,11 @@
 #include <string>
 #include "gfa-priv.h"
 
-void writeResults(std::vector<gfa_edrst_t>* results, std::string outDir){
+void writeResults(std::vector<gfa_edrst_t>* results, std::string outDir,
+     int nIters){
   std::ofstream oFile(outDir + "/results.txt");
-  for (gfa_edrst_t r : *results){
+  for (int i = 0; i < nIters; i++){
+    gfa_edrst_t r = (*results)[i];
     oFile << r.s << " ";
     //push the wlen variable which appears to be some kind of character count. I
     oFile << r.wlen << " ";
