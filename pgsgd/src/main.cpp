@@ -266,12 +266,15 @@ void layout_kernel(cuda::layout_config_t config, double *etas, double *zetas, cu
 
 int main() {
     std::cout << "PGSGD benchmark:" << std::endl;
-    std::cout << "Loading input (" << INPUT_PATH << ")" << std::endl;
+
+    std::string input_path_str = INPUT_PATH;
+    if (!std::filesystem::exists(input_path_str)) input_path_str = "pgsgd/" + input_path_str;
+    std::cout << "Loading input (" << input_path_str << ")" << std::endl;
 
     auto load_start = std::chrono::system_clock::now();
 
     odgi::graph_t graph;
-    utils::handle_gfa_odgi_input(INPUT_PATH, "layout", false, NTHREADS, graph);
+    utils::handle_gfa_odgi_input(input_path_str, "layout", false, NTHREADS, graph);
 
 
     // create random X and Y coordinates
