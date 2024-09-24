@@ -17,7 +17,6 @@
 #include "profilingUtils.h"
 
 
-const int NTHREADS = 6;
 const int ITER_MAX = 30;
 
 const string INPUT_PATH = "data/DRB1-3123.og";
@@ -264,8 +263,14 @@ void layout_kernel(cuda::layout_config_t config, double *etas, double *zetas, cu
 }
 
 
-int main() {
+int main(int argc, char* argv[]) {
     std::cout << "PGSGD benchmark:" << std::endl;
+
+    // set the number of threads when passed as argument
+    int NTHREADS = 6;
+    if (argc >= 2) {
+        NTHREADS = std::atoi(argv[1]);
+    }
 
     std::string input_path_str = INPUT_PATH;
     if (!std::filesystem::exists(input_path_str)) input_path_str = "pgsgd/" + input_path_str;
