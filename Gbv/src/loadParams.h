@@ -18,15 +18,24 @@ using OnewayTrace = typename Common::OnewayTrace;
 using BitvectorAligner=GraphAlignerBitvectorBanded<size_t, int64_t, uint64_t>;
 
 const int WORD_SIZE = 64;
+/*
+ * Get the number of iterations to run from the command line arguments.
+ * Throws an error if the number of arguments is not 2 or 3.
+ * Default if only 2 arguments (so n_iters not provided) is MAX_INT.
+ * @param int argc, the number of arguments
+ * @param char* argv[], the arguments
+ * @return int, the number of iterations to run
+ */
+int getNumItersFromArgs(int argc, char* argv[]);
 
 /*
- * returns the first argment on the command line. This should be the directory
- * of the input files
- * @param int argc as passed to main
- * @param char* argv as passed to main
- * @return string the 1st command line arg, should be input dir
+ * Get the input directory from the command line arguments.
+ * Throws an error if the number of arguments is not 2 or 3.
+ * @param int argc, the number of arguments
+ * @param char* argv[], the arguments
+ * @return string, the input directory
  */
-std::string parseArgs(int argc, char* argv[]);
+std::string getInputDirFromArgs(int argc, char* argv[]);
 
 /*
  * Loads in the params object. Because of peculiarities of the constructors, the
