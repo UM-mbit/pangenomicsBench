@@ -14,6 +14,8 @@
 #include "cuda/layout.h"
 #include "dirty_zipfian_int_distribution.h"
 
+#include "profilingUtils.h"
+
 
 const int NTHREADS = 6;
 const int ITER_MAX = 30;
@@ -446,11 +448,13 @@ int main() {
 
 
     // run kernel
+    BEGIN_ROI
     std::cout << "Running kernel (" << NTHREADS << " threads)" << std::endl;
     auto kernel_start = std::chrono::system_clock::now();
     layout_kernel(config, etas, zetas, node_data, path_data);
     auto kernel_end = std::chrono::system_clock::now();
     std::cout << "Kernel complete" << std::endl;
+    END_ROI
 
 
     std::cout << "Writing output (" << OUT_PATH << ")" << std::endl;
