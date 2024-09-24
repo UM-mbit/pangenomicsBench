@@ -15,7 +15,8 @@
 #define OUT_DIR "Out" //NOTE, be responsible. rm -rf OUT_DIR is called
 
 int main(int argc, char* argv[]){
-  std::string inputDir = parseArgs(argc, argv);
+  std::string inputDir = getInputDirFromArgs(argc, argv);
+  int num_iter_override = getNumItersFromArgs(argc, argv);
 
   std::cout << "Loading Inputs" << std::endl;
   auto load_start = std::chrono::system_clock::now();
@@ -26,6 +27,7 @@ int main(int argc, char* argv[]){
       load_read_alignment_params(num_inputs, inputDir);
   auto load_end = std::chrono::system_clock::now();
   
+  int numIters = std::min(num_inputs, num_iter_override);
   BEGIN_ROI
   std::cout << "Running Kernel" << std::endl;
   auto kernel_start = std::chrono::system_clock::now();
@@ -34,7 +36,7 @@ int main(int argc, char* argv[]){
   printf("launching thread %d\n",omp_get_thread_num());
   #pragma omp for
 #endif
-  for (int i=0; i < num_inputs; i++){ //loop over reads (or really anchors)
+  for (int i=0; i < numIters; i++){ //loop over reads (or really anchors)
     //load inputs
     gssw_graph* graph = (*params)[i].graph;
     std::string seq = (*params)[i].seq;
@@ -61,7 +63,7 @@ int main(int argc, char* argv[]){
 
   std::cout << "Writing Outputs" << std::endl;
   auto write_start = std::chrono::system_clock::now();
-  for (int i = 0; i < num_inputs; i++){
+  for (int i = 0; i < numIters; i++){
     //load inputs
     gssw_graph* graph = (*params)[i].graph;
     std::string seq = (*params)[i].seq;

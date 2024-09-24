@@ -7,22 +7,43 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <limits.h>
 
 #include "gssw_to_json.hpp"
 
-std::string parseArgs(int argc, char* argv[]){
-  if (argc == 2){
-    return argv[1];
-  } else {
+std::string getInputDirFromArgs(int argc, char* argv[]){
+  if (argc == 2 || argc == 3){ //either no n_iters or n_iters provided
+    return argv[1]; //return the input directory
+  } else { //too many or to few args
     if (argc == 1){
       std::cerr << "No command-line argument provided. ";
-    } else if (argc > 2){
+    } else if (argc > 3){
       std::cerr << "too many command-line arguments provided. ";
     }
-    std::cerr << "Please specify one argument, the path to the input directory" << std::endl;
-    assert(argc == 2);
+    std::cerr << "Please specify one argument, the path to the input directory, and an optional second argument, the number of iterations" << std::endl;
+    assert(false);
   }
-  return "";
+  return ""; //should never reach this point
+}
+
+int getNumItersFromArgs(int argc, char* argv[]){
+  if (argc == 2){
+    return INT_MAX; //default if no number of iterations is provided
+  } else {
+    if (argc == 3){
+      return std::stoi(argv[2]); //means n_iters was provided
+    } 
+    else { //either too few or too many args
+      if (argc == 1){
+        std::cerr << "No command-line argument provided. ";
+      } else if (argc > 3){
+        std::cerr << "too many command-line arguments provided. ";
+      }
+      std::cerr << "Please specify one argument, the path to the input directory, and an optional second argument, the number of iterations" << std::endl;
+      assert(false);
+    }
+  }
+  return 0; //should never reach this point
 }
 
 ReadAlignmentParams::~ReadAlignmentParams(){
