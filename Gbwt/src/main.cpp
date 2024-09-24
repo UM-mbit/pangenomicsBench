@@ -16,17 +16,20 @@
 #define OUT_DIR "Out" //NOTE, be responsible. rm -rf OUT_DIR is called
 
 int main(int argc, char* argv[]){
-  std::string inputDir = parseArgs(argc, argv);
+  std::string inputDir = getInputDirFromArgs(argc, argv);
+  int numIterOverride = getNumItersFromArgs(argc, argv);
 
   std::cout << "Loading Inputs" << std::endl;
   auto load_start = std::chrono::system_clock::now();
   init_output_dir(OUT_DIR);
   int numInputs = ldNumInputs(inputDir);
+  int numIters = std::min(numIterOverride, numInputs);
   std::vector<std::vector<gbwt::node_type>>* queries = loadQueries(inputDir,numInputs);
   std::vector<gbwt::SearchState> queryResults = 
-      std::vector<gbwt::SearchState>(numInputs);
+      std::vector<gbwt::SearchState>(numIters);
   gbwt::GBWT* gbwtIndex = ldGbwt(inputDir);
   auto load_end = std::chrono::system_clock::now();
+
   
   BEGIN_ROI
   std::cout << "Running Kernel" << std::endl;
@@ -36,7 +39,7 @@ int main(int argc, char* argv[]){
   printf("launching thread %d\n",omp_get_thread_num());
   #pragma omp for
 #endif
-  for (int i=0; i < numInputs; i++){ //loop over queries
+  for (int i=0; i < numIters; i++){ //loop over queries
     std::vector<gbwt::node_type>& query = (*queries)[i];
     queryResults[i] = gbwtIndex->find(query.begin(), query.end());
   }
