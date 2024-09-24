@@ -2,37 +2,47 @@
 #include <cstdlib>
 #include <vector>
 #include <chrono>
+#include <omp.h>
 
 #include "loadParams.h"
 #include "eval.h"
 #include "gbwt/gbwt.h"
 #include "gbwt/algorithms.h"
+#include "profilingUtils.h"
+
+#include <cassert>
 
 
-#define INPUT_DIR "/data2/kaplannp/Genomics/Datasets/Kernels/Gbwt"
 #define OUT_DIR "Out" //NOTE, be responsible. rm -rf OUT_DIR is called
 
-int main(){
+int main(int argc, char* argv[]){
+  std::string inputDir = parseArgs(argc, argv);
 
   std::cout << "Loading Inputs" << std::endl;
   auto load_start = std::chrono::system_clock::now();
   init_output_dir(OUT_DIR);
-  int numInputs = ldNumInputs(INPUT_DIR);
-  std::vector<std::vector<int>>* queries = loadQueries(INPUT_DIR,numInputs);
+  int numInputs = ldNumInputs(inputDir);
+  std::vector<std::vector<gbwt::node_type>>* queries = loadQueries(inputDir,numInputs);
   std::vector<gbwt::SearchState> queryResults = 
       std::vector<gbwt::SearchState>(numInputs);
-  gbwt::GBWT* gbwtIndex = ldGbwt(INPUT_DIR);
+  gbwt::GBWT* gbwtIndex = ldGbwt(inputDir);
   auto load_end = std::chrono::system_clock::now();
   
+  BEGIN_ROI
   std::cout << "Running Kernel" << std::endl;
   auto kernel_start = std::chrono::system_clock::now();
-  //For loop over reads.
-  for (int i=0; i < numInputs; i++){
-    std::vector<int>& query = (*queries)[i];
-    gbwtIndex->prefix(query.begin(), query.end());
+#if (THREADING_ENABLED==1)
+  #pragma omp parallel 
+  printf("launching thread %d\n",omp_get_thread_num());
+  #pragma omp for
+#endif
+  for (int i=0; i < numInputs; i++){ //loop over queries
+    std::vector<gbwt::node_type>& query = (*queries)[i];
+    queryResults[i] = gbwtIndex->find(query.begin(), query.end());
   }
-  std::cout << "Kernel Complete" << std::endl;
   auto kernel_end = std::chrono::system_clock::now();
+  std::cout << "Kernel Complete" << std::endl;
+  END_ROI
   
   std::cout << "Writing Outputs" << std::endl;
   auto write_start = std::chrono::system_clock::now();

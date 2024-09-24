@@ -20,6 +20,15 @@ using BitvectorAligner=GraphAlignerBitvectorBanded<size_t, int64_t, uint64_t>;
 const int WORD_SIZE = 64;
 
 /*
+ * returns the first argment on the command line. This should be the directory
+ * of the input files
+ * @param int argc as passed to main
+ * @param char* argv as passed to main
+ * @return string the 1st command line arg, should be input dir
+ */
+std::string parseArgs(int argc, char* argv[]);
+
+/*
  * Loads in the params object. Because of peculiarities of the constructors, the
  * graph is "owned" by SerializableParams. Params. only holds a reference. The
  * class we want is Params, but we need to keep SerializableParams around so we

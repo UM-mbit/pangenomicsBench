@@ -5,44 +5,46 @@
 #include <cstdlib>
 #include <vector>
 #include <chrono>
+#include <omp.h>
 
 #include "loadParams.h"
 #include "eval.h"
 #include "nlohmann/json.hpp"
+#include "profilingUtils.h"
 
-#define INPUT_DIR "/data2/kaplannp/Genomics/Datasets/Kernels/Gbv"
-//#define INPUT_DIR "/data2/kaplannp/Genomics/DumpTrue"
-//#define INPUT_DIR "/data2/kaplannp/Genomics/Dump"
 #define OUT_DIR "Out" //NOTE, be responsible. rm -rf OUT_DIR is called
 
-    //  const DPSlice& initialSlice,
-		//auto initialSlice = BV::getInitialEmptySlice();
-int main(){
+int main(int argc, char* argv[]){
+  std::string inputDir = parseArgs(argc, argv);
 
   std::cout << "Loading Inputs" << std::endl;
   auto load_start = std::chrono::system_clock::now();
 
   init_output_dir(OUT_DIR);
-  int numInputs = ld_num_inputs(INPUT_DIR);
+  int numInputs = ld_num_inputs(inputDir);
   std::vector<std::vector<int64_t>>* maxScoresVec = 
-      getSliceMaxScores(INPUT_DIR, numInputs);
-  std::pair<Params*, SerializableParams*> paramPair = loadParams(INPUT_DIR);
+      getSliceMaxScores(inputDir, numInputs);
+  std::pair<Params*, SerializableParams*> paramPair = loadParams(inputDir);
   Params* params = std::get<0>(paramPair);
-  std::vector<std::string>* seqs = loadSequences(INPUT_DIR);
+  std::vector<std::string>* seqs = loadSequences(inputDir);
   std::vector<std::string>* revSeqs = getRevSequence(seqs);
   std::vector<std::vector<ProcessedSeedHit>>* seedHitVecs = 
-      loadSeedHits(INPUT_DIR, numInputs);
+      loadSeedHits(inputDir, numInputs);
   ReusableState* reusableState = getReusableState(params);
 	BitvectorAligner bvAligner(*params);
   //for holding the outputs
   std::vector<std::vector<OnewayTrace>> outputTraces(numInputs);
   auto load_end = std::chrono::system_clock::now();
 
+  BEGIN_ROI
   std::cout << "Running Kernel" << std::endl;
   auto kernel_start = std::chrono::system_clock::now();
-
-  //For loop over reads.
-  for (int i=0; i < numInputs; i++){
+#if (THREADING_ENABLED==1)
+  #pragma omp parallel 
+  printf("launching thread %d\n",omp_get_thread_num());
+  #pragma omp for
+#endif
+  for (int i=0; i < numInputs; i++){ //loop over reads (or really anchors)
     //load inputs
     std::string& seq = (*seqs)[i];
     std::string& revSeq = (*revSeqs)[i];
@@ -57,6 +59,8 @@ int main(){
                                           sliceMaxScores);
   }
   auto kernel_end = std::chrono::system_clock::now();
+  std::cout << "Kernel Complete" << std::endl;
+  END_ROI
 
   //write outputs for comparison
   std::cout << "Writing Outputs" << std::endl;

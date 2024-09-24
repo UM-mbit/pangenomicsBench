@@ -1,21 +1,24 @@
-#include <string>
-#include <cstdlib>
-#include <stdio.h>
 #include <fstream>
+#include <eval.h>
 #include <iostream>
 #include <cassert>
-#include "eval.h"
-#include "gssw.h"
-#include "nlohmann/json.hpp"
-#include "gssw_to_json.hpp"
+#include <string>
+#include "gfa-priv.h"
 
-void write_ggm(std::string out_dir, int ind, gssw_graph_mapping* ggm){
-  std::string stager("");
-  stager = out_dir + "/mapping"+std::to_string(ind)+".json";
-  FILE* out_file;
-  out_file = fopen(stager.c_str(), "w");
-  gssw_print_graph_mapping(ggm, out_file);
-  fclose(out_file);
+void writeResults(std::vector<gfa_edrst_t>* results, std::string outDir){
+  std::ofstream oFile(outDir + "/results.txt");
+  for (gfa_edrst_t r : *results){
+    oFile << r.s << " ";
+    //push the wlen variable which appears to be some kind of character count. I
+    oFile << r.wlen << " ";
+
+    oFile << "{ ";
+    for(int i = 0; i < r.nv; i++){
+      oFile << r.v[i] << " ";
+    }
+    oFile << "}";
+    oFile << std::endl;
+  }
 }
 
 void init_output_dir(std::string output_dir){

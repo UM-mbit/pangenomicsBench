@@ -7,28 +7,21 @@
 #include "gbwt/gbwt.h"
 #include "gbwt/algorithms.h"
 
-
 /*
- * convert gbwt::SearchState to a string
- * @param gbwt::SearchState the output of a prefix query
- * @returns string representation of the query. "node: (startRange,endRange)"
+ * returns the first argment on the command line. This should be the directory
+ * of the input files
+ * @param int argc as passed to main
+ * @param char* argv as passed to main
+ * @return string the 1st command line arg, should be input dir
  */
-std::string searchStateToStr(gbwt::SearchState state);
-
-/*
- * writes the query results to a file 
- * @param outDir the ouput directory
- * @param vector<gbwt::searchState> the outputs of the queries
- */
-void dumpStatesToFile(std::string outDir, 
-      std::vector<gbwt::SearchState> queryOuts);
+std::string parseArgs(int argc, char* argv[]);
 
 /*
  * loads in queries from a file
  * @param string inDir, the root directory of the Inputs
  * @return vector<vector<int>> each vector<int> is a list of node ids (a query)
  */
-std::vector<std::vector<int>>* loadQueries(std::string inputDir, int numInputs);
+std::vector<std::vector<gbwt::node_type>>* loadQueries(std::string inputDir, int numInputs);
 
 /*
  * loads in the gbwt from a file

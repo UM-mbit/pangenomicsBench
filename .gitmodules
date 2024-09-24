@@ -18,3 +18,14 @@
 [submodule "pgsgd/deps/odgi"]
 	path = pgsgd/deps/odgi
 	url = git@github.com:nsmlzl/odgi.git
+[submodule "minigraphDumper"]
+	path = Gwfa/deps/minigraphDumper
+	url = git@github.com:kaplannp/minigraph.git
+	branch = serialization
+[submodule "minigraphKernel"]
+	path = Gwfa/deps/minigraphKernel
+	url = git@github.com:kaplannp/minigraph.git
+	branch = kernel
+[submodule "OneStopProfileShop"]
+	path = ProfileScripts
+	url = git@github.com:kaplannp/OneStopProfileShop.git

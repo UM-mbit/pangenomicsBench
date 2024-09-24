@@ -4,30 +4,37 @@
 #include <stdint.h>
 #include <cstdlib>
 #include <vector>
+#include <omp.h>
 #include <chrono>
 
 #include "gssw.h"
 #include "loadParams.h"
 #include "eval.h"
+#include "profilingUtils.h"
 
-#define INPUT_DIR "/data2/kaplannp/Genomics/Datasets/Kernels/Gssw"
 #define OUT_DIR "Out" //NOTE, be responsible. rm -rf OUT_DIR is called
 
-int main(){
+int main(int argc, char* argv[]){
+  std::string inputDir = parseArgs(argc, argv);
 
   std::cout << "Loading Inputs" << std::endl;
   auto load_start = std::chrono::system_clock::now();
 
   init_output_dir(OUT_DIR);
-  int num_inputs = ld_num_inputs(INPUT_DIR);
+  int num_inputs = ld_num_inputs(inputDir);
   std::vector<ReadAlignmentParams>* params =
-      load_read_alignment_params(num_inputs, INPUT_DIR);
+      load_read_alignment_params(num_inputs, inputDir);
   auto load_end = std::chrono::system_clock::now();
   
+  BEGIN_ROI
   std::cout << "Running Kernel" << std::endl;
   auto kernel_start = std::chrono::system_clock::now();
-  //For loop over reads.
-  for (int i=0; i < num_inputs; i++){
+#if (THREADING_ENABLED==1)
+  #pragma omp parallel 
+  printf("launching thread %d\n",omp_get_thread_num());
+  #pragma omp for
+#endif
+  for (int i=0; i < num_inputs; i++){ //loop over reads (or really anchors)
     //load inputs
     gssw_graph* graph = (*params)[i].graph;
     std::string seq = (*params)[i].seq;
@@ -48,8 +55,9 @@ int main(){
                             constants::save_matrixes );
 
   }
-  std::cout << "Kernel Complete" << std::endl;
   auto kernel_end = std::chrono::system_clock::now();
+  std::cout << "Kernel Complete" << std::endl;
+  END_ROI
 
   std::cout << "Writing Outputs" << std::endl;
   auto write_start = std::chrono::system_clock::now();

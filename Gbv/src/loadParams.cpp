@@ -1,5 +1,6 @@
 #include "loadParams.h"
 #include <stdint.h>
+#include <cassert>
 #include <cstdlib>
 #include <string>
 #include <sstream>
@@ -16,6 +17,21 @@
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/serialization/vector.hpp>
+
+std::string parseArgs(int argc, char* argv[]){
+  if (argc == 2){
+    return argv[1];
+  } else {
+    if (argc == 1){
+      std::cerr << "No command-line argument provided. ";
+    } else if (argc > 2){
+      std::cerr << "too many command-line arguments provided. ";
+    }
+    std::cerr << "Please specify one argument, the path to the input directory" << std::endl;
+    assert(argc == 2);
+  }
+  return "";
+}
 
 std::pair<Params*, SerializableParams*> loadParams(std::string inputDir){
   std::string stager{""};

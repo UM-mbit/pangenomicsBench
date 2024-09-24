@@ -6,33 +6,29 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <cassert>
 
 #include "gbwt/gbwt.h"
 #include "gbwt/algorithms.h"
 
-
-std::string searchStateToStr(gbwt::SearchState state){
-  std::stringstream ss;
-  ss << state.node << ": (" << std::get<0>(state.range) << "," << std::get<1>(state.range);
-  return ss.str();
-}
-
-void dumpStatesToFile(std::string outDir, 
-    std::vector<gbwt::SearchState> queryOuts){
-  std::ofstream f(outDir+"/queryOuts.txt");
-  
-  //output a header
-  f << "node: (startRange,endRange)" << std::endl;
-  
-  //dump each state to a new line
-  for(gbwt::SearchState s : queryOuts){
-    f << searchStateToStr(s) << std::endl;
+std::string parseArgs(int argc, char* argv[]){
+  if (argc == 2){
+    return argv[1];
+  } else {
+    if (argc == 1){
+      std::cerr << "No command-line argument provided. ";
+    } else if (argc > 2){
+      std::cerr << "too many command-line arguments provided. ";
+    }
+    std::cerr << "Please specify one argument, the path to the input directory" << std::endl;
+    assert(argc == 2);
   }
+  return "";
 }
 
-std::vector<std::vector<int>>* loadQueries(std::string inputDir, int numInputs){
-  std::vector<std::vector<int>>* queries = 
-      new std::vector<std::vector<int>>(numInputs);
+std::vector<std::vector<gbwt::node_type>>* loadQueries(std::string inputDir, int numInputs){
+  std::vector<std::vector<gbwt::node_type>>* queries = 
+      new std::vector<std::vector<gbwt::node_type>>(numInputs);
 
   std::ifstream f(inputDir+"/Inputs/queries.txt");
   std::string line("");
@@ -42,6 +38,13 @@ std::vector<std::vector<int>>* loadQueries(std::string inputDir, int numInputs){
     std::string nodeId("");
     while(std::getline(lineStream, nodeId, '>')){
       (*queries)[i].push_back(std::stoll(nodeId));
+    }
+    i++;
+  }
+  //Now that you've loaded everything, encode the nodes
+  for (std::vector<gbwt::node_type>& query : *queries){
+    for (gbwt::node_type& n : query){
+      n = gbwt::Node::encode(n, false);
     }
   }
   return queries;
