@@ -16,3 +16,10 @@
 1. Build ODGI; see instructions above.
 2. Run odgi layout (from pgsgd directory; set number of CPU threads `<NTRHEADS>`): `$ deps/odgi/bin/odgi layout -i data/DRB1-3123.og -o out_odgi.lay -t <NTHREADS> --gpu`
 9. Create png with ODGI: `$ deps/odgi/bin/odgi draw -i data/DRB1-3123.og -c out_odgi.lay -p drb1_odgi.png -C`
+
+
+# Profiling
+
+* Run from `pangenomicBench` directory (parent dir of `pgsgd`): `python mainRun.py`
+* Set `LD_LIBRARY_PATH` accordingly.
+* Create output directory for all profiling files.
