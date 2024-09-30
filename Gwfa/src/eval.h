@@ -9,8 +9,11 @@
  * written in C. This is a c++ version
  * @param results: a vector of gfa_edrst_t* that will be written to output file
  * @param output_file: string, the file to write the results to
+ * @param nIters: int, the number of iterations that were run (usually
+ *                results.size())
  */
-void writeResults(std::vector<gfa_edrst_t>* results, std::string output_file);
+void writeResults(std::vector<gfa_edrst_t>* results, std::string output_file, 
+    int nIters);
 
 /*
  * Initializes the ouput directory

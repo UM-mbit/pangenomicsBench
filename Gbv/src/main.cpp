@@ -15,13 +15,15 @@
 #define OUT_DIR "Out" //NOTE, be responsible. rm -rf OUT_DIR is called
 
 int main(int argc, char* argv[]){
-  std::string inputDir = parseArgs(argc, argv);
+  std::string inputDir = getInputDirFromArgs(argc, argv);
+  int num_iter_override = getNumItersFromArgs(argc, argv);
 
   std::cout << "Loading Inputs" << std::endl;
   auto load_start = std::chrono::system_clock::now();
 
   init_output_dir(OUT_DIR);
   int numInputs = ld_num_inputs(inputDir);
+  int numIters = std::min(num_iter_override, numInputs);
   std::vector<std::vector<int64_t>>* maxScoresVec = 
       getSliceMaxScores(inputDir, numInputs);
   std::pair<Params*, SerializableParams*> paramPair = loadParams(inputDir);
@@ -33,7 +35,7 @@ int main(int argc, char* argv[]){
   ReusableState* reusableState = getReusableState(params);
 	BitvectorAligner bvAligner(*params);
   //for holding the outputs
-  std::vector<std::vector<OnewayTrace>> outputTraces(numInputs);
+  std::vector<std::vector<OnewayTrace>> outputTraces(numIters);
   auto load_end = std::chrono::system_clock::now();
 
   BEGIN_ROI
@@ -44,7 +46,7 @@ int main(int argc, char* argv[]){
   printf("launching thread %d\n",omp_get_thread_num());
   #pragma omp for
 #endif
-  for (int i=0; i < numInputs; i++){ //loop over reads (or really anchors)
+  for (int i=0; i < numIters; i++){ //loop over reads (or really anchors)
     //load inputs
     std::string& seq = (*seqs)[i];
     std::string& revSeq = (*revSeqs)[i];

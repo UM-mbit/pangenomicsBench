@@ -2,7 +2,6 @@
 VTUNE_HOME=/opt/intel/oneapi/vtune/latest
 
 SRC_DIR:=src
-DEP_SRC_DIR:=deps/vg/src
 BIN_DIR:=bin
 OBJ_DIR:=obj
 
@@ -10,6 +9,7 @@ CXX ?= g++
 EXE:=gssw
 
 CWD:=$(shell pwd)
+DEP_SRC_DIR:=$(CWD)/deps/vg/src
 PROF_UTILS=$(CWD)/../ProfileScripts/RoiCppHeaders
 CXXFLAGS:= -O3 -ggdb -g3 -fopenmp
 INCLUDE_FLAGS := -I$(PROF_UTILS)/include -I$(CWD)/deps/Gssw/src -I$(CWD)/deps/vg/deps/nlohmann-json/single_include -I$(CWD)/deps/vg/src -I$(SRC_DIR) -I$(VTUNE_HOME)/include

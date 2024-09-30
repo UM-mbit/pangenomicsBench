@@ -7,22 +7,43 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <limits.h>
 
 #include "gssw_to_json.hpp"
 
-std::string parseArgs(int argc, char* argv[]){
-  if (argc == 2){
-    return argv[1];
-  } else {
+std::string getInputDirFromArgs(int argc, char* argv[]){
+  if (argc == 2 || argc == 3){ //either no n_iters or n_iters provided
+    return argv[1]; //return the input directory
+  } else { //too many or to few args
     if (argc == 1){
       std::cerr << "No command-line argument provided. ";
-    } else if (argc > 2){
+    } else if (argc > 3){
       std::cerr << "too many command-line arguments provided. ";
     }
-    std::cerr << "Please specify one argument, the path to the input directory" << std::endl;
-    assert(argc == 2);
+    std::cerr << "Please specify one argument, the path to the input directory, and an optional second argument, the number of iterations" << std::endl;
+    assert(false);
   }
-  return "";
+  return ""; //should never reach this point
+}
+
+int getNumItersFromArgs(int argc, char* argv[]){
+  if (argc == 2){
+    return INT_MAX; //default if no number of iterations is provided
+  } else {
+    if (argc == 3){
+      return std::stoi(argv[2]); //means n_iters was provided
+    } 
+    else { //either too few or too many args
+      if (argc == 1){
+        std::cerr << "No command-line argument provided. ";
+      } else if (argc > 3){
+        std::cerr << "too many command-line arguments provided. ";
+      }
+      std::cerr << "Please specify one argument, the path to the input directory, and an optional second argument, the number of iterations" << std::endl;
+      assert(false);
+    }
+  }
+  return 0; //should never reach this point
 }
 
 ReadAlignmentParams::~ReadAlignmentParams(){
@@ -36,8 +57,9 @@ std::vector<ReadAlignmentParams>* load_read_alignment_params(size_t num_inputs,
   std::vector<ReadAlignmentParams>* params = 
          new std::vector<ReadAlignmentParams>(num_inputs);
 
+  nlohmann::json* graphs = ld_gssw_graph(input_dir);
   for (int i = 0; i < num_inputs; i++){
-    (*params)[i].graph = ld_gssw_graph(input_dir, i);
+    (*params)[i].graph = ld_graph((*graphs)[i]);
     std::string seq = ld_seq(input_dir, i);
     (*params)[i].seq = seq;
     (*params)[i].nt_table = get_nt_table(seq.size());
@@ -67,18 +89,16 @@ int8_t* get_score_matrix(){
   return score_matrix;
 }
 
-gssw_graph* ld_gssw_graph(std::string in_dir, int ind){
+nlohmann::json* ld_gssw_graph(std::string in_dir){
   //std::cerr << "about to open the file" << std::endl;
-  std::ifstream f(in_dir+"/Inputs/Graphs/g"+std::to_string(ind)+".json");
+  std::ifstream f(in_dir+"/Inputs/graph.json");
   //std::cerr << in_dir+"/Inputs/Graphs/g"+std::to_string(ind)+".json" << std::endl;
   if (!f.is_open()) {
               throw std::runtime_error("Could not open file");
   }
-  nlohmann::json data = nlohmann::json::parse(f);
-  //std::cerr << data << std::endl;
-  gssw_graph* graph = ld_graph(data);
-  //gssw_graph_print(graph);
-  return graph;
+  nlohmann::json* data = new nlohmann::json();
+  *data = nlohmann::json::parse(f);
+  return data;
 }
 
 
