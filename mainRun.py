@@ -17,6 +17,49 @@ class PangenomicsBenchRunner(Runner):
         shutil.move("Out", os.path.join(self.kernelOutputDir, "Out"))
 
 
+# pgsgd runner
+# vanilla (6 threads)
+#outDir="out"
+#app="./pgsgd/bin/pgsgd 6"
+#execAndLog("rm -rf {}".format(outDir))
+#runner = Runner(outDir)
+#runner.runVanillaApp(app, outputs=["out_benchmark.lay"])
+#runner.printResults()
+
+# VtuneUarch
+#outDir="out"
+#app="./pgsgd/bin/pgsgd.prof"
+#execAndLog("rm -rf {}".format(outDir))
+#runner = Runner(outDir)
+#runner.runVtuneUarch(app)
+#runner.printResults()
+
+# VtuneCache
+#outDir="out"
+#app="./pgsgd/bin/pgsgd.prof"
+#execAndLog("rm -rf {}".format(outDir))
+#runner = Runner(outDir)
+#runner.runVtuneCache(app)
+#runner.printResults()
+
+# PinInstrCount
+#outDir="out"
+#app="./pgsgd/bin/pgsgd.prof 1"
+#execAndLog("rm -rf {}".format(outDir))
+#runner = Runner(outDir)
+#runner.runPinInstrCount(app)
+#runner.printResults()
+
+# Threadscaling
+#outDir="out"
+#app="./pgsgd/bin/pgsgd.prof {}"
+#execAndLog("rm -rf {}".format(outDir))
+#runner = Runner(outDir)
+#runner.runThreadScaling(app, [1, 8, 16, 32])
+#runner.printResults()
+
+
+
 outDir="Outs/CacheUBenchmark"
 #app="OMP_NUM_THREADS={} ./Dummy/bin/dummy.omp /data2/kaplannp/Genomics/Datasets/Kernels/Dummy"
 app="./CacheUBenchmark/bin/cacheUBenchmark.prof"
