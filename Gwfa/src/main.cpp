@@ -10,6 +10,8 @@
 #include "loadParams.h"
 #include "eval.h"
 
+#include "profilingUtils.h"
+
 #define OUT_DIR "Out" //NOTE, be responsible. rm -rf OUT_DIR is called
 
 int main(int argc, char* argv[]){
@@ -49,7 +51,7 @@ int main(int argc, char* argv[]){
   //DEBUG
   //gfa_print(graph, stdout, 0);
   
-  //BEGIN_ROI
+  BEGIN_ROI
   std::cout << "Running Kernel" << std::endl;
   auto kernel_start = std::chrono::system_clock::now();
 #if (THREADING_ENABLED==1)
@@ -58,16 +60,25 @@ int main(int argc, char* argv[]){
   #pragma omp for
 #endif
   for (int i=0; i < numIters; i++){ //loop over reads (or really anchors)
+    auto iterStart = std::chrono::system_clock::now();
     //run the kernel
     gfa_ed_step((*zBuff)[i],
                 (*v1Buff)[i],
                 (*end1Buff)[i],
                 GDP_MAX_ED,
                 &(results[i]));
+    auto iterEnd = std::chrono::system_clock::now();
+    auto iterTime = std::chrono::duration_cast<std::chrono::microseconds>(
+                                    iterEnd-iterStart).count();
+    std::cout << "i: " << i << std::endl;
+    std::cout << "iterTime: " << iterTime << "us" << std::endl;
+    std::cout << "(v0, end0), (v1, end1): (" << (*v0Buff)[i] << ", " << (*end0Buff)[i] << "), (" << (*v1Buff)[i] << ", " << (*end1Buff)[i] << ")" << std::endl;
+    std::cout << "queryGapLen: " << (*queryGapLenBuff)[i] << std::endl;
+    std::cout << std::endl;
   }
   auto kernel_end = std::chrono::system_clock::now();
   std::cout << "Kernel Complete" << std::endl;
-  //END_ROI
+  END_ROI
 
   std::cout << "Writing Outputs" << std::endl;
   auto write_start = std::chrono::system_clock::now();
