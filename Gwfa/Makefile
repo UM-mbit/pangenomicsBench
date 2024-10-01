@@ -12,8 +12,8 @@ EXE:=gwfa
 PROF_UTILS=$(CWD)/../ProfileScripts/RoiCppHeaders
 MINIGRAPH_DIR=$(CWD)/deps/minigraphKernel
 CWD:=$(shell pwd)
-CXXFLAGS:= -O0 -ggdb -g3 -fopenmp
-CFLAGS:= -O0 -ggdb -g3 -fopenmp
+CXXFLAGS:= -O3 -ggdb -g3 -fopenmp
+CFLAGS:= -O3 -ggdb -g3 -fopenmp
 INCLUDE_FLAGS :=-I$(PROF_UTILS)/include -I$(SRC_DIR) -I$(MINIGRAPH_DIR) -I$(VTUNE_HOME)/include 
 LD_LIB_DIR_FLAGS := -L$(PROF_UTILS)/lib -L$(VTUNE_HOME)/lib64 
 LD_LIB_FLAGS := -lprofileUtils -littnotify -fopenmp -ldl -lz -lpthread -ldl
@@ -44,7 +44,7 @@ $(OBJ_DIR)/%.cpp.prof.o: $(SRC_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) -c -o $@ $^ -DTIMER_ENABLED=1 -DVTUNE_ENABLED=1 -DPIN_ENABLED=1
 
 $(OBJ_DIR)/%.c.o: $(MINIGRAPH_DIR)/%.c
-	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) -c -o $@ $^
+	$(CC) $(CCFLAGS) $(INCLUDE_FLAGS) -c -o $@ $^
 
 $(BIN_DIR)/$(EXE): $(CPP_OBJ_FILES_SINGLE) $(C_OBJ_FILES)
 	$(CXX) $(INCLUDE_FLAGS) -o $@ $^ $(LD_LIB_DIR_FLAGS) $(LD_LIB_FLAGS) 
