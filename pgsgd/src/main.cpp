@@ -547,7 +547,7 @@ int main(int argc, char* argv[]) {
             write_end-write_start).count();
 
     std::cout << std::endl;
-    std::cout << "Load time: " << load_time_us << "us (conversion time: " << load_conversion_time_us << "us)" << std::endl;
-    std::cout << "Kernel time: " << kernel_time_us << "us" << std::endl;
-    std::cout << "Write time: " << write_time_us << "us" << std::endl;
+    std::cout << "load time: " << load_time_us << "us (conversion time: " << load_conversion_time_us << "us)" << std::endl;
+    std::cout << "kernel time: " << kernel_time_us << "us" << std::endl;
+    std::cout << "write time: " << write_time_us << "us" << std::endl;
 }
