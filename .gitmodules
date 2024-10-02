@@ -26,3 +26,6 @@
 [submodule "OneStopProfileShop"]
 	path = ProfileScripts
 	url = git@github.com:kaplannp/OneStopProfileShop.git
+[submodule "transclosure/deps/seqwish"]
+	path = transclosure/deps/seqwish
+	url = https://github.com/ekg/seqwish.git
