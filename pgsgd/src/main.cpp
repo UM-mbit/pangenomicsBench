@@ -19,7 +19,8 @@
 
 const int ITER_MAX = 30;
 
-const string INPUT_PATH = "data/DRB1-3123.og";
+const string INPUT_PATH = "/data2/jnms/chr20/chr20.og";
+// const string INPUT_PATH = "data/DRB1-3123.og";
 // const string INPUT_PATH = "data/chr20.og";
 const string OUT_PATH = "out_benchmark.lay";
 
