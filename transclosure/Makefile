@@ -8,10 +8,39 @@ EXE:=transclosure
 
 #PROF_UTILS=$(CWD)/../ProfileScripts/RoiCppHeaders
 CWD:=$(shell pwd)
-CXXFLAGS:= -Wall -O3
-INCLUDE_FLAGS := -Ideps/seqwish/src #-I$(PROF_UTILS)/include -I$(VTUNE_HOME)/include
-LD_LIB_DIR_FLAGS := -L$(CWD)/deps/seqwish/lib #-L$(PROF_UTILS)/lib -L$(VTUNE_HOME)/lib64
-LD_LIB_FLAGS := -lseqwish #-lprofileUtils -littnotify -ldl
+CXXFLAGS:= -std=gnu++14 -Wall -O3 -fopenmp -pthread -march=native #-g
+INCLUDE_FLAGS := \
+	-Ideps/seqwish/src \
+	-Ideps/seqwish/deps/sdsl-lite/include \
+	-Ideps/seqwish/build/sdsl-lite-prefix/src/sdsl-lite-build/external/libdivsufsort/include \
+	-Ideps/seqwish/deps/gzip_reader \
+	-Ideps/seqwish/deps/mmmulti/src \
+	-Ideps/seqwish/deps/mmmulti/deps/mio/include \
+	-Ideps/seqwish/deps/mmmulti/deps/ips4o/include \
+	-Ideps/seqwish/deps/atomic_queue/include/atomic_queue \
+	-Ideps/seqwish/deps/atomicbitvector/include \
+	-Ideps/seqwish/deps/flat_hash_map \
+	-Ideps/seqwish/deps/paryfor
+    #-I$(PROF_UTILS)/include -I$(VTUNE_HOME)/include
+LD_LIB_DIR_FLAGS := \
+	-L$(CWD)/deps/seqwish/lib \
+	-L$(CWD)/deps/seqwish/build/sdsl-lite-prefix/src/sdsl-lite-build/lib \
+	-L$(CWD)/deps/seqwish/build/sdsl-lite-prefix/src/sdsl-lite-build/external/libdivsufsort/lib \
+	-fopenmp \
+	-pthread
+	#-L$(PROF_UTILS)/lib -L$(VTUNE_HOME)/lib64
+LD_LIB_FLAGS := \
+	-lseqwish \
+	-lz \
+	-lsdsl \
+	-ldivsufsort \
+	-ldivsufsort64 \
+	-ljemalloc \
+	-latomic \
+	-march=native \
+	-ltbb
+    #-lprofileUtils -littnotify -ldl
+
 OBJ_FILES := $(SRC_DIR)/main.single.o
 #OBJ_FILES_PROF := $(SRC_DIR)/main.prof.o
 
