@@ -7,6 +7,7 @@
 #include "mmmultimap.hpp"
 #include "mmmultiset.hpp"
 #include "atomic_queue.h"
+#include "ips4o.hpp"
 
 #include "alignments.hpp"
 #include "transclosure.hpp"
@@ -288,7 +289,7 @@ size_t compute_transitive_closures_kernel(
                                    }),
                     dsets.end());
         // compress the dsets
-        ips4o::parallel::sort(dsets.begin(), dsets.end());
+        ips4o::parallel::sort(dsets.begin(), dsets.end(), std::less<>(), num_threads);
 
         uint64_t c = 0;
         assert(dsets.size());
@@ -315,7 +316,7 @@ size_t compute_transitive_closures_kernel(
             uint64_t& minpos = dsets_by_min_pos[d.first].first;
             minpos = std::min(minpos, d.second);
         }
-        ips4o::parallel::sort(dsets_by_min_pos.begin(), dsets_by_min_pos.end());
+        ips4o::parallel::sort(dsets_by_min_pos.begin(), dsets_by_min_pos.end(), std::less<>(), num_threads);
         /*
         for (auto& d : dsets_by_min_pos) {
             std::cerr << "sdset_min_pos\t" << d.second << "\t" << d.first << std::endl;
@@ -331,7 +332,7 @@ size_t compute_transitive_closures_kernel(
         for (auto& d : dsets) {
             d.first = dset_names[d.first];
         }
-        ips4o::parallel::sort(dsets.begin(), dsets.end());
+        ips4o::parallel::sort(dsets.begin(), dsets.end(), std::less<>(), num_threads);
         /*
         for (auto& d : dsets) {
             std::cerr << "sdset_rename\t" << d.first << "\t" << pos_to_string(d.second) << std::endl;
