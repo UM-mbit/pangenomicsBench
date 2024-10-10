@@ -5,10 +5,14 @@
 #include "seqindex.hpp"
 #include "tempfile.hpp"
 #include "mmmultimap.hpp"
+#include "mmmultiset.hpp"
 #include "atomic_queue.h"
 
 #include "alignments.hpp"
 #include "transclosure.hpp"
+#include "compact.hpp"
+#include "links.hpp"
+#include "gfa.hpp"
 
 
 using namespace std;
@@ -16,6 +20,7 @@ using namespace seqwish;
 
 const string PAN_FASTA_PATH = "/data2/jnms/chr20/chr20.pan.fasta";
 const string PAF_PATH = "/data2/jnms/chr20/chr20.paf";
+const string GFA_PATH = "chr20.gfa";
 
 
 size_t compute_transitive_closures_kernel(
@@ -25,6 +30,7 @@ size_t compute_transitive_closures_kernel(
         mmmulti::iitree<uint64_t, pos_t>& node_iitree, // maps graph seq ranges to input seq ranges
         mmmulti::iitree<uint64_t, pos_t>& path_iitree, // maps input seq ranges to graph seq ranges
         uint64_t num_threads) {
+
     uint64_t repeat_max = uint64_t{0};
     uint64_t min_repeat_dist = uint64_t{0};
     uint64_t transclose_batch_size = uint64_t{1000000};
@@ -378,12 +384,14 @@ int main(void) {
     std::cout << "Transclosure benchmark:" << std::endl;
 
     const int NTHREADS = 8;
+    const bool KEEP_TEMP = false;
 
     // temporary file
+    auto load_start = std::chrono::system_clock::now();
     char* cwd = get_current_dir_name();
     temp_file::set_dir(std::string(cwd));
     free(cwd);
-    temp_file::set_keep_temp(true);
+    temp_file::set_keep_temp(KEEP_TEMP);
 
     // build seqidx
     auto seqidx_ptr = std::make_unique<seqwish::seqindex_t>();
@@ -412,9 +420,52 @@ int main(void) {
     auto path_iitree_ptr = std::make_unique<mmmulti::iitree<uint64_t, seqwish::pos_t>>(path_iitree_idx); // maps input seq to graph seq
     auto& path_iitree = *path_iitree_ptr;
 
+    auto load_end = std::chrono::system_clock::now();
+
+
+    std::cout << "Running kernel (" << NTHREADS << " threads)" << std::endl;
+    auto kernel_start = std::chrono::system_clock::now();
     size_t graph_length = compute_transitive_closures_kernel(seqidx, aln_iitree, seq_v_file, node_iitree, path_iitree, NTHREADS);
+    auto kernel_end = std::chrono::system_clock::now();
+    std::cout << "Kernel complete" << std::endl;
 
 
+    auto write_start = std::chrono::system_clock::now();
     std::cout << graph_length << std::endl;
+    // compress
+    sdsl::bit_vector seq_id_bv(graph_length+1);
+    compact_nodes(seqidx, graph_length, node_iitree, path_iitree, seq_id_bv, NTHREADS);
+
+    sdsl::sd_vector<> seq_id_cbv;
+    sdsl::sd_vector<>::rank_1_type seq_id_cbv_rank;
+    sdsl::sd_vector<>::select_1_type seq_id_cbv_select;
+    sdsl::util::assign(seq_id_cbv, sdsl::sd_vector<>(seq_id_bv));
+    seq_id_bv = sdsl::bit_vector(); // clear bitvector
+    sdsl::util::assign(seq_id_cbv_rank, sdsl::sd_vector<>::rank_1_type(&seq_id_cbv));
+    sdsl::util::assign(seq_id_cbv_select, sdsl::sd_vector<>::select_1_type(&seq_id_cbv));
+
+    // create paths
+    const std::string link_mm_idx =  temp_file::create("seqwish-", ".sql");
+    auto link_mmset_ptr = std::make_unique<mmmulti::set<std::pair<pos_t, pos_t>>>(link_mm_idx);
+    auto& link_mmset = *link_mmset_ptr;
+    derive_links(seqidx, node_iitree, path_iitree, seq_id_cbv, seq_id_cbv_rank, seq_id_cbv_select, link_mmset, NTHREADS);
+
+    // emit GFA
+    std::ofstream out(GFA_PATH.c_str());
+    emit_gfa(out, graph_length, seq_v_file, node_iitree, path_iitree, seq_id_cbv, seq_id_cbv_rank, seq_id_cbv_select, seqidx, link_mmset, NTHREADS);
+    auto write_end = std::chrono::system_clock::now();
+
+
+    auto load_time_us = std::chrono::duration_cast<std::chrono::microseconds>(
+            load_end-load_start).count();
+    auto kernel_time_us = std::chrono::duration_cast<std::chrono::microseconds>(
+            kernel_end-kernel_start).count();
+    auto write_time_us = std::chrono::duration_cast<std::chrono::microseconds>(
+            write_end-write_start).count();
+
+    std::cout << std::endl;
+    std::cout << "load time: " << load_time_us << "us: " << std::endl;
+    std::cout << "kernel time: " << kernel_time_us << "us" << std::endl;
+    std::cout << "write time: " << write_time_us << "us" << std::endl;
     return 0;
 }
