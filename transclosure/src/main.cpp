@@ -453,6 +453,7 @@ int main(void) {
     // emit GFA
     std::ofstream out(GFA_PATH.c_str());
     emit_gfa(out, graph_length, seq_v_file, node_iitree, path_iitree, seq_id_cbv, seq_id_cbv_rank, seq_id_cbv_select, seqidx, link_mmset, NTHREADS);
+    std::cout << "Stored graph (" << GFA_PATH << ")" << std::endl;
     auto write_end = std::chrono::system_clock::now();
 
 
