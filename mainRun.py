@@ -28,8 +28,8 @@ runner.runVtuneUarch(app)
 runner.runVtuneCache(app)
 app="./transclosure/bin/transclosure.prof {}"
 runner.runThreadScaling(app, [1] + [4] + list(range(8, 65, 8)))
-app="./transclsoure/bin/transclosure.prof 1"
-#runner.runPinInstrCount(app)
+app="./transclosure/bin/transclosure.prof 1"
+runner.runPinInstrCount(app)
 runner.printResults()
 
 
