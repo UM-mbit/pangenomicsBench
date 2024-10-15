@@ -10,18 +10,328 @@
 #include "ips4o.hpp"
 
 #include "alignments.hpp"
-#include "transclosure.hpp"
 #include "compact.hpp"
 #include "links.hpp"
 #include "gfa.hpp"
+#include "match.hpp"
+#include "dset64-gccAtomic.hpp"
 
 
 using namespace std;
-//using namespace seqwish;
 
 const string PAN_FASTA_PATH = "/data2/jnms/chr20/chr20.pan.fasta";
 const string PAF_PATH = "/data2/jnms/chr20/chr20.paf";
 const string GFA_PATH = "chr20.gfa";
+
+
+typedef atomic_queue::AtomicQueue2<std::pair<seqwish::pos_t, uint64_t>, 2 << 16> range_atomic_queue_t;
+typedef atomic_queue::AtomicQueue2<std::pair<seqwish::match_t, bool>, 2 << 16> overlap_atomic_queue_t;
+
+struct range_t {
+    uint64_t begin = 0;
+    uint64_t end = 0;
+};
+
+
+void extend_range(const uint64_t& s_pos,
+                  const seqwish::pos_t& q_pos,
+                  std::map<seqwish::pos_t, range_t>& range_buffer,
+                  const seqwish::seqindex_t& seqidx,
+                  mmmulti::iitree<uint64_t, seqwish::pos_t>& node_iitree,
+                  mmmulti::iitree<uint64_t, seqwish::pos_t>& path_iitree);
+void flush_ranges(const uint64_t& s_pos,
+                  std::map<seqwish::pos_t, range_t>& range_buffer,
+                  mmmulti::iitree<uint64_t, seqwish::pos_t>& node_iitree,
+                  mmmulti::iitree<uint64_t, seqwish::pos_t>& path_iitree);
+void flush_range(std::map<seqwish::pos_t, range_t>::iterator it,
+                 mmmulti::iitree<uint64_t, seqwish::pos_t>& node_iitree,
+                 mmmulti::iitree<uint64_t, seqwish::pos_t>& path_iitree);
+void for_each_fresh_range(const seqwish::match_t& range,
+                          const std::vector<bool>& seen_bv,
+                          const std::function<void(seqwish::match_t)>& lambda);
+void handle_range(seqwish::match_t s,
+                  atomicbitvector::atomic_bv_t& curr_bv,
+                  overlap_atomic_queue_t& ovlp_q,
+                  range_atomic_queue_t& todo_in);
+void explore_overlaps(const seqwish::match_t& b,
+                      const std::vector<bool>& seen_bv,
+                      atomicbitvector::atomic_bv_t& curr_bv,
+                      mmmulti::iitree<uint64_t, seqwish::pos_t>& aln_iitree,
+                      overlap_atomic_queue_t& ovlp_q,
+                      range_atomic_queue_t& todo_in);
+void write_graph_chunk(const seqwish::seqindex_t& seqidx,
+                       mmmulti::iitree<uint64_t, seqwish::pos_t>& node_iitree,
+                       mmmulti::iitree<uint64_t, seqwish::pos_t>& path_iitree,
+                       std::ofstream& seq_v_out,
+                       std::map<seqwish::pos_t, range_t>& range_buffer,
+                       std::vector<std::pair<uint64_t, uint64_t>>* dsets_ptr,
+                       uint64_t repeat_max,
+                       uint64_t min_repeat_dist);
+size_t compute_transitive_closures_kernel(
+        const seqwish::seqindex_t& seqidx,
+        mmmulti::iitree<uint64_t, seqwish::pos_t>& aln_iitree, // input alignment matches between query seqs
+        const std::string& seq_v_file,
+        mmmulti::iitree<uint64_t, seqwish::pos_t>& node_iitree, // maps graph seq ranges to input seq ranges
+        mmmulti::iitree<uint64_t, seqwish::pos_t>& path_iitree, // maps input seq ranges to graph seq ranges
+        uint64_t num_threads);
+
+
+void extend_range(const uint64_t& s_pos,
+                  const seqwish::pos_t& q_pos,
+                  std::map<seqwish::pos_t, range_t>& range_buffer,
+                  const seqwish::seqindex_t& seqidx,
+                  mmmulti::iitree<uint64_t, seqwish::pos_t>& node_iitree,
+                  mmmulti::iitree<uint64_t, seqwish::pos_t>& path_iitree) {
+    // find a position in the map that we can add onto
+    // it must match position and orientation
+    seqwish::pos_t q_last_pos = q_pos;
+    seqwish::decr_pos(q_last_pos);
+    auto f = range_buffer.find(q_last_pos);
+    // if one doesn't exist, add the range
+    if (f == range_buffer.end()) {
+        range_buffer[q_pos] = {s_pos, s_pos+1};
+    } else if ((!seqwish::is_rev(q_pos) && seqidx.seq_start(seqwish::offset(q_pos))) || (seqwish::is_rev(q_pos) && seqidx.seq_start(seqwish::offset(q_last_pos)))) {
+        // flush the buffer we found, so we don't extend across node boundaries
+        flush_range(f, node_iitree, path_iitree);
+        range_buffer.erase(f);
+        range_buffer[q_pos] = {s_pos, s_pos+1};
+    } else {
+        // if one does, check that it matches our extension,
+        range_t x = f->second;
+        if (x.end == s_pos) {
+            // if so we expand its range and drop it back into the map at the new Q end pos
+            range_buffer.erase(f);
+            ++x.end; // increment the match length
+            range_buffer[q_pos] = x; // and stash it
+        } else {
+            // if it doesn't, we store a new range
+            range_buffer[q_pos] = {s_pos, s_pos+1};
+        }
+    }
+}
+
+
+void flush_ranges(const uint64_t& s_pos,
+                  std::map<seqwish::pos_t, range_t>& range_buffer,
+                  mmmulti::iitree<uint64_t, seqwish::pos_t>& node_iitree,
+                  mmmulti::iitree<uint64_t, seqwish::pos_t>& path_iitree) {
+    // for each range, we're going to see if we've stepped more than one past the end
+    // if we have, we'll write them out
+    std::map<seqwish::pos_t, range_t>::iterator it = range_buffer.begin();
+    while (it != range_buffer.end()) {
+        if (it->second.end != s_pos) {
+            flush_range(it, node_iitree, path_iitree);
+            it = range_buffer.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+
+void flush_range(std::map<seqwish::pos_t, range_t>::iterator it,
+                 mmmulti::iitree<uint64_t, seqwish::pos_t>& node_iitree,
+                 mmmulti::iitree<uint64_t, seqwish::pos_t>& path_iitree) {
+    auto& range_in_s = it->second;
+    uint64_t match_length, match_start_in_s, match_end_in_s, match_start_in_q, match_end_in_q;
+    seqwish::pos_t match_pos_in_q, match_pos_in_s, match_start_pos_in_q;
+    seqwish::pos_t match_end_pos_in_q = it->first;
+    bool is_rev_match = seqwish::is_rev(match_end_pos_in_q);
+    if (!is_rev_match) {
+        match_length = range_in_s.end - range_in_s.begin;
+        match_start_in_s = range_in_s.begin;
+        match_end_in_s = range_in_s.end;
+        match_end_in_q = seqwish::offset(match_end_pos_in_q) + 1;
+        match_start_in_q = match_end_in_q - match_length;
+        match_pos_in_s = seqwish::make_pos_t(match_start_in_s, false);
+        match_pos_in_q = seqwish::make_pos_t(match_start_in_q, false);
+    } else {
+        match_length = range_in_s.end - range_in_s.begin;
+        match_start_in_s = range_in_s.begin;
+        match_end_in_s = range_in_s.end;
+        match_end_in_q = seqwish::offset(match_end_pos_in_q);
+        seqwish::decr_pos(match_end_pos_in_q, match_length);
+        match_pos_in_s = seqwish::make_pos_t(match_end_in_s-1, true);
+        match_pos_in_q = seqwish::make_pos_t(seqwish::offset(match_end_pos_in_q)-1, true);
+        match_start_in_q = match_end_in_q;
+        match_end_in_q = seqwish::offset(match_end_pos_in_q);
+    }
+    node_iitree.add(match_start_in_s, match_end_in_s, match_pos_in_q);
+    path_iitree.add(match_start_in_q, match_end_in_q, match_pos_in_s);
+}
+
+
+// break the big range into its component ranges that we haven't already closed,
+// breaking on sequence breaks
+void for_each_fresh_range(const seqwish::match_t& range,
+                          const std::vector<bool>& seen_bv,
+                          const std::function<void(seqwish::match_t)>& lambda) {
+    // walk range, breaking where we've seen it, emitting new ranges
+    uint64_t p = range.start;
+    seqwish::pos_t t = range.pos;
+    //std::cerr << "for_each_fresh_range " << range.start << "-" << range.end << " " << pos_to_string(range.pos) << std::endl;
+    while (p < range.end) {
+        // if we haven't seen p, start making a range
+        //std::cerr << "looking at " << p << std::endl;
+        if (seen_bv[p]) {
+            ++p;
+            seqwish::incr_pos(t);
+        } else {
+            // otherwise, skip along
+            uint64_t q = p;
+            seqwish::pos_t v = t;
+            while (p < range.end && !seen_bv[p]) {
+                ++p;
+                seqwish::incr_pos(t);
+            }
+            //std::cerr << "lambda\t" << q << " " << p << " " << pos_to_string(v) << std::endl;
+            lambda({q, p, v});
+        }
+    }
+}
+
+
+void handle_range(seqwish::match_t s,
+                  atomicbitvector::atomic_bv_t& curr_bv,
+                  overlap_atomic_queue_t& ovlp_q,
+                  range_atomic_queue_t& todo_in) {
+    bool all_set_there = true;
+    seqwish::pos_t n = s.pos;
+    for (uint64_t i = s.start; i < s.end; ++i) {
+        all_set_there = curr_bv.set(seqwish::offset(n)) && all_set_there;
+        seqwish::incr_pos(n);
+    }
+    ovlp_q.push(std::make_pair(s, seqwish::is_rev(s.pos)));
+    if (!all_set_there) {
+        auto item = std::make_pair(seqwish::make_pos_t(seqwish::offset(s.pos),seqwish::is_rev(s.pos)), s.end - s.start);
+        todo_in.push(item);
+    }
+}
+
+
+void explore_overlaps(const seqwish::match_t& b,
+                      const std::vector<bool>& seen_bv,
+                      atomicbitvector::atomic_bv_t& curr_bv,
+                      mmmulti::iitree<uint64_t, seqwish::pos_t>& aln_iitree,
+                      overlap_atomic_queue_t& ovlp_q,
+                      range_atomic_queue_t& todo_in) {
+    //std::vector<size_t> o;
+    aln_iitree.overlap(
+        b.start, b.end,
+        [&](const uint64_t& start,
+            const uint64_t& end,
+            const seqwish::pos_t& pos) {
+            seqwish::match_t r = { start, end, pos };
+            if (b.start > r.start) {
+                uint64_t trim_from_start = b.start - r.start;
+                r.start += trim_from_start;
+                seqwish::incr_pos(r.pos, trim_from_start);
+            }
+            if (r.end > b.end) {
+                uint64_t trim_from_end = r.end - b.end;
+                r.end -= trim_from_end;
+            }
+            assert(r.start < r.end);
+            for_each_fresh_range(
+                r,
+                seen_bv,
+                [&](seqwish::match_t s) {
+                    handle_range(s, curr_bv, ovlp_q, todo_in);
+                });
+        });
+}
+
+
+void write_graph_chunk(const seqwish::seqindex_t& seqidx,
+                       mmmulti::iitree<uint64_t, seqwish::pos_t>& node_iitree,
+                       mmmulti::iitree<uint64_t, seqwish::pos_t>& path_iitree,
+                       std::ofstream& seq_v_out,
+                       std::map<seqwish::pos_t, range_t>& range_buffer,
+                       std::vector<std::pair<uint64_t, uint64_t>>* dsets_ptr,
+                       uint64_t repeat_max,
+                       uint64_t min_repeat_dist) {
+    auto& dsets = *dsets_ptr;
+    size_t seq_v_length = seq_v_out.tellp();
+    uint64_t last_dset_id = std::numeric_limits<uint64_t>::max(); // ~inf
+    char current_base = '\0';
+    // determine if we've switched references
+    // here we implement a count of the number of times we touch the current sequence
+    std::map<uint64_t, uint64_t> seq_counts;
+    std::map<uint64_t, seqwish::pos_t> last_seq_pos;
+    auto close_to_prev =
+        [&last_seq_pos,
+         &min_repeat_dist]
+        (const uint64_t& seq_id,
+         const seqwish::pos_t& pos) {
+            auto f = last_seq_pos.find(seq_id);
+            if (f == last_seq_pos.end()) {
+                return false;
+            } else {
+                if (min_repeat_dist > std::abs((int64_t)seqwish::offset(pos) - (int64_t)seqwish::offset(f->second))) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        };
+    // run the closure for each dset, avoiding looping as configured
+    std::map<uint64_t, std::vector<seqwish::pos_t>> todos;
+    std::string seq_out;
+    auto flush_todos =
+        [&](void) {
+            for (auto& t : todos) {
+                seq_out.push_back(current_base);
+                ++seq_v_length;
+                for (auto& pos : t.second) {
+                    extend_range(seq_v_length-1, pos, range_buffer, seqidx, node_iitree, path_iitree);
+                }
+            }
+        };
+    for (auto& d : dsets) {
+        const auto& curr_dset_id = d.first;
+        const auto& curr_offset = d.second;
+        char base = seqidx.at(curr_offset);
+        // if we're on a new position
+        if (curr_dset_id != last_dset_id) {
+            if (repeat_max || min_repeat_dist) {
+                // finish out todos stashed from repeat_max limitations
+                flush_todos();
+                todos.clear();
+                // empty out our seq counts and last seq positions
+                seq_counts.clear();
+                last_seq_pos.clear();
+            }
+            // emit our new position
+            current_base = base;
+            seq_out.push_back(current_base);
+            ++seq_v_length;
+            flush_ranges(seq_v_length-1, range_buffer, node_iitree, path_iitree);
+            last_dset_id = curr_dset_id;
+        }
+        seqwish::pos_t curr_q_pos = seqwish::make_pos_t(curr_offset, false);
+        if (current_base != seqidx.at_pos(curr_q_pos)) {
+            curr_q_pos = seqwish::make_pos_t(curr_offset, true);
+        }
+        assert(current_base = seqidx.at_pos(curr_q_pos));
+        uint64_t curr_seq_id = seqidx.seq_id_at(curr_offset);
+        uint64_t curr_seq_count = 0;
+        if ((min_repeat_dist != 0 && close_to_prev(curr_seq_id, curr_q_pos))
+            || (repeat_max != 0 && seq_counts[curr_seq_id]+1 > repeat_max)) {
+            curr_seq_count = ++seq_counts[curr_seq_id];
+        } else if (repeat_max != 0 || min_repeat_dist != 0) {
+            ++seq_counts[curr_seq_id];
+        }
+        if (curr_seq_count == 0) {
+            extend_range(seq_v_length-1, curr_q_pos, range_buffer, seqidx, node_iitree, path_iitree);
+        } else {
+            todos[seq_counts[curr_seq_id]].push_back(curr_q_pos);
+        }
+        last_seq_pos[curr_seq_id] = curr_q_pos;
+    }
+    flush_todos(); // catch any todos we had hanging around
+    seq_v_out << seq_out;
+    delete dsets_ptr;
+}
 
 
 size_t compute_transitive_closures_kernel(
@@ -49,7 +359,7 @@ size_t compute_transitive_closures_kernel(
     // this maps from a position in Q (our input seqs concatenated, offset and orientation)
     // to a range (start and length) in S (our graph sequence vector)
     // we are mapping from the /last/ position in the matched range, not the first
-    std::map<seqwish::pos_t, seqwish::range_t> range_buffer;
+    std::map<seqwish::pos_t, range_t> range_buffer;
     uint64_t bases_seen = 0;
     std::thread* graph_writer = nullptr;
     //uint64_t last_seq_id = seqidx.seq_id_at(0);
@@ -74,18 +384,18 @@ size_t compute_transitive_closures_kernel(
         // bits of sequence we've seen during this union-find chunk
         atomicbitvector::atomic_bv_t q_curr_bv(seqidx.seq_length());
         // shared work queues for our threads
-        auto todo_in_ptr = new seqwish::range_atomic_queue_t;
+        auto todo_in_ptr = new range_atomic_queue_t;
         auto& todo_in = *todo_in_ptr;
-        auto todo_out_ptr = new seqwish::range_atomic_queue_t;
+        auto todo_out_ptr = new range_atomic_queue_t;
         auto& todo_out = *todo_out_ptr;
-        auto ovlp_q_ptr = new seqwish::overlap_atomic_queue_t;
+        auto ovlp_q_ptr = new overlap_atomic_queue_t;
         auto& ovlp_q = *ovlp_q_ptr;
         std::deque<std::pair<seqwish::pos_t, uint64_t>> todo; // intermediate buffer for master thread
         std::vector<std::pair<seqwish::match_t, bool>> ovlp; // written into by the master thread
 
         // seed the initial ranges
         // the chunk range isn't an actual alignment, so we handle it differently
-        seqwish::for_each_fresh_range({chunk_start, chunk_end, 0}, q_seen_bv, [&](seqwish::match_t b) {
+        for_each_fresh_range({chunk_start, chunk_end, 0}, q_seen_bv, [&](seqwish::match_t b) {
                 // the special case is handling ranges that have no matches
                 // we need to close these even if they aren't matched to anything
                 for (uint64_t j = b.start; j < b.end; ++j) {
@@ -349,7 +659,7 @@ size_t compute_transitive_closures_kernel(
             delete graph_writer;
         }
         // spawn the graph writer thread
-        graph_writer = new std::thread(seqwish::write_graph_chunk,
+        graph_writer = new std::thread(write_graph_chunk,
                                        std::ref(seqidx),
                                        std::ref(node_iitree),
                                        std::ref(path_iitree),
