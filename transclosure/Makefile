@@ -1,4 +1,4 @@
-#VTUNE_HOME=/opt/intel/oneapi/vtune/latest
+VTUNE_HOME=/opt/intel/oneapi/vtune/latest
 
 SRC_DIR:=src
 BIN_DIR:=bin
@@ -6,7 +6,7 @@ BIN_DIR:=bin
 CXX ?= g++
 EXE:=transclosure
 
-#PROF_UTILS=$(CWD)/../ProfileScripts/RoiCppHeaders
+PROF_UTILS=$(CWD)/../ProfileScripts/RoiCppHeaders
 CWD:=$(shell pwd)
 CXXFLAGS:= -std=gnu++14 -Wall -O3 -fopenmp -pthread -march=native #-g
 INCLUDE_FLAGS := \
@@ -20,15 +20,17 @@ INCLUDE_FLAGS := \
 	-Ideps/seqwish/deps/atomic_queue/include/atomic_queue \
 	-Ideps/seqwish/deps/atomicbitvector/include \
 	-Ideps/seqwish/deps/flat_hash_map \
-	-Ideps/seqwish/deps/paryfor
-    #-I$(PROF_UTILS)/include -I$(VTUNE_HOME)/include
+	-Ideps/seqwish/deps/paryfor \
+	-I$(PROF_UTILS)/include \
+	-I$(VTUNE_HOME)/include
 LD_LIB_DIR_FLAGS := \
 	-L$(CWD)/deps/seqwish/lib \
 	-L$(CWD)/deps/seqwish/build/sdsl-lite-prefix/src/sdsl-lite-build/lib \
 	-L$(CWD)/deps/seqwish/build/sdsl-lite-prefix/src/sdsl-lite-build/external/libdivsufsort/lib \
 	-fopenmp \
-	-pthread
-	#-L$(PROF_UTILS)/lib -L$(VTUNE_HOME)/lib64
+	-pthread \
+	-L$(PROF_UTILS)/lib \
+	-L$(VTUNE_HOME)/lib64
 LD_LIB_FLAGS := \
 	-lseqwish \
 	-lz \
@@ -38,13 +40,15 @@ LD_LIB_FLAGS := \
 	-ljemalloc \
 	-latomic \
 	-march=native \
-	-ltbb
-    #-lprofileUtils -littnotify -ldl
+	-ltbb \
+	-lprofileUtils \
+	-littnotify \
+	-ldl
 
 OBJ_FILES := $(SRC_DIR)/main.single.o
-#OBJ_FILES_PROF := $(SRC_DIR)/main.prof.o
+OBJ_FILES_PROF := $(SRC_DIR)/main.prof.o
 
-all: $(BIN_DIR)/$(EXE) #$(BIN_DIR)/$(EXE).prof
+all: $(BIN_DIR)/$(EXE) $(BIN_DIR)/$(EXE).prof
 
 $(SRC_DIR)/%.single.o: src/main.cpp
 		$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) -c -o $@ $<

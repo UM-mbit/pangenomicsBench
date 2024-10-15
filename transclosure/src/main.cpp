@@ -16,6 +16,7 @@
 #include "match.hpp"
 #include "dset64-gccAtomic.hpp"
 
+#include "profilingUtils.h"
 
 using namespace std;
 
@@ -732,11 +733,13 @@ int main(void) {
     auto load_end = std::chrono::system_clock::now();
 
 
+    BEGIN_ROI
     std::cout << "Running kernel (" << NTHREADS << " threads)" << std::endl;
     auto kernel_start = std::chrono::system_clock::now();
     size_t graph_length = compute_transitive_closures_kernel(seqidx, aln_iitree, seq_v_file, node_iitree, path_iitree, NTHREADS);
     auto kernel_end = std::chrono::system_clock::now();
     std::cout << "Kernel complete" << std::endl;
+    END_ROI
 
 
     auto write_start = std::chrono::system_clock::now();
