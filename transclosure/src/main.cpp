@@ -690,10 +690,14 @@ size_t compute_transitive_closures_kernel(
 }
 
 
-int main(void) {
+int main(int argc, char* argv[]) {
     std::cout << "Transclosure benchmark:" << std::endl;
+    // set the number of threads when passed as argument
+    int NTHREADS = 6;
+    if (argc >= 2) {
+        NTHREADS = std::atoi(argv[1]);
+    }
 
-    const int NTHREADS = 8;
     const bool KEEP_TEMP = false;
 
     // temporary file
