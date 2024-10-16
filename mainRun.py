@@ -59,15 +59,33 @@ class PangenomicsBenchRunner(Runner):
 #runner.printResults()
 
 
+# combined transclosure
+#outDir="out"
+#execAndLog("rm -rf {}".format(outDir))
+#runner = Runner(outDir)
+#app="./transclosure/bin/transclosure 8"
+#runner.runVanillaApp(app, outputs=["chr20.gfa"])
+#app="./transclosure/bin/transclosure.prof 8"
+#runner.runVtuneUarch(app)
+#runner.runVtuneCache(app)
+#app="./transclosure/bin/transclosure.prof {}"
+#runner.runThreadScaling(app, [1] + [4] + list(range(8, 65, 8)))
+#app="./transclosure/bin/transclosure.prof 1"
+#runner.runPinInstrCount(app)
+#runner.printResults()
 
-outDir="Outs/CacheUBenchmark"
+
+#outDir="Outs/CacheUBenchmark"
 #app="OMP_NUM_THREADS={} ./Dummy/bin/dummy.omp /data2/kaplannp/Genomics/Datasets/Kernels/Dummy"
-app="./CacheUBenchmark/bin/cacheUBenchmark.prof"
-execAndLog("rm -rf {}".format(outDir))
-runner = Runner(outDir)
+#app="./CacheUBenchmark/bin/cacheUBenchmark.prof"
+#outDir="Outs/CacheUBenchmark"
+#app="OMP_NUM_THREADS={} ./Dummy/bin/dummy.omp /data2/kaplannp/Genomics/Datasets/Kernels/Dummy"
+#app="./CacheUBenchmark/bin/cacheUBenchmark.prof"
+#execAndLog("rm -rf {}".format(outDir))
+#runner = Runner(outDir)
 #runner.runThreadScaling(app, [1] + list(range(8, 65, 8)))
 #runner.runVanillaApp(app, outputs="Out")
 #runner.runPinInstrCount(app)
 #runner.runVtuneUarch(app)
-runner.runVtuneCache(app)
+#runner.runVtuneCache(app)
 #runner.printResults()
