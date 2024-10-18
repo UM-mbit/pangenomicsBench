@@ -21,10 +21,9 @@
 
 #define DATA_SIZE (ALL_CACHE_SIZE*10)
 
-#define N_PTR_CHASES 100000000
+//#define N_PTR_CHASES 100000000
 //#define N_PTR_CHASES 10000
 
-#define N_WRITES_PER_ADDR 
 
 #define SEED 42
 
@@ -35,6 +34,9 @@ void fillWithRands(long* arr, long size){
 }
 
 int main(int argc, char* argv[]){
+
+  std::cout << "This warning always prints: Make sure you pass an integer argument " << std::endl;
+  int nPtrChases = std::atoi(argv[1]);
 
   //This commendted out version is a copy of the store version
   std::srand(SEED);
@@ -51,7 +53,7 @@ int main(int argc, char* argv[]){
   printf("launching thread %d\n",omp_get_thread_num());
   #pragma omp for
 #endif
-  for(long count=0; count < N_PTR_CHASES; count++){
+  for(long count=0; count < nPtrChases; count++){
     //we would just do data[loc], but that may have cycles, this way we are
     //really random
     loc = (data[loc] + loc + count) % DATA_SIZE;
