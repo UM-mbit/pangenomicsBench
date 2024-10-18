@@ -1,10 +1,10 @@
 # Instructions for running PGSGD benchmark
 
 1. Git clone this repo: `$ git clone git@github.com:UM-mbit/pangenomicsBench.git`
-2. Checkout *pgsgd* branch and move into `pgsgd` directory: `$ cd pangenomicsBench; git checkout pgsgd; cd pgsgd`
+2. Move into `pgsgd` directory: `$ cd pangenomicsBench/pgsgd`
 3. Get odgi submodule: `$ git submodule update --init --recursive deps/odgi`
 4. Build ODGI (tested with cmake v3.28.3 and g++ v13.2.0); ODGI's dependencies are listed in its [repo](https://github.com/pangenome/odgi?tab=readme-ov-file#building-from-source): `$ cd deps/odgi; mkdir build; cd build; cmake ..; make -j; cd ../../..`
-5. Add libodgi to library path `$ export LD_LIBRARY_PATH=deps/odgi/lib:$LD_LIBRARY_PATH`
+5. Add libodgi to library path `$ export LD_LIBRARY_PATH=${pwd}/deps/odgi/lib:$LD_LIBRARY_PATH`
 5. Set vtune variable `export VTUNE_HOME=/opt/intel/oneapi/vtune/latest`
 6. Build pgsgd benchmark binary (note: use g++-11 compiler): `$ mkdir -p bin; make -j`
 7. Get preprocess pangenomes (chr20 takes some time; currently deactivated): `$ ./get_input.sh`
@@ -22,5 +22,4 @@
 # Profiling
 
 * Run from `pangenomicBench` directory (parent dir of `pgsgd`): `python mainRun.py`
-* Set `LD_LIBRARY_PATH` accordingly.
 * Create output directory for all profiling files.
