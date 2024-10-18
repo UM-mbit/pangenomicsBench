@@ -36,14 +36,14 @@ class PangenomicsBenchRunner(Runner):
 #outDir="out"
 #execAndLog("rm -rf {}".format(outDir))
 #runner = Runner(outDir)
-#app="./pgsgd/bin/pgsgd 8"
+#app="./pgsgd/bin/pgsgd 8 /data2/jnms/Shared/HPRCv2_chr20/chr20.og out_benchmark.lay"
 #runner.runVanillaApp(app, outputs=["out_benchmark.lay"])
-#app="./pgsgd/bin/pgsgd.prof 8"
+#app="./pgsgd/bin/pgsgd.prof 8 /data2/jnms/Shared/HPRCv2_chr20/chr20.og out_benchmark.lay"
 #runner.runVtuneUarch(app)
 #runner.runVtuneCache(app)
-#app="./pgsgd/bin/pgsgd.prof {}"
+#app="./pgsgd/bin/pgsgd.prof {} /data2/jnms/Shared/HPRCv2_chr20/chr20.og out_benchmark.lay"
 #runner.runThreadScaling(app, [1] + [4] + list(range(8, 65, 8)))
-#app="./pgsgd/bin/pgsgd.prof 1"
+#app="./pgsgd/bin/pgsgd.prof 1 /data2/jnms/Shared/HPRCv2_chr20/chr20.og out_benchmark.lay"
 #runner.runPinInstrCount(app)
 #runner.printResults()
 

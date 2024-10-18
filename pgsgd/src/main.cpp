@@ -19,11 +19,6 @@
 
 const int ITER_MAX = 30;
 
-const string INPUT_PATH = "/data2/jnms/chr20/chr20.og";
-// const string INPUT_PATH = "data/DRB1-3123.og";
-// const string INPUT_PATH = "data/chr20.og";
-const string OUT_PATH = "out_benchmark.lay";
-
 
 void layout_kernel(cuda::layout_config_t config, double *etas, double *zetas, cuda::node_data_t &node_data, cuda::path_data_t &path_data){
     int nbr_threads = config.nthreads;
@@ -170,11 +165,17 @@ int main(int argc, char* argv[]) {
 
     // set the number of threads when passed as argument
     int NTHREADS = 6;
-    if (argc >= 2) {
-        NTHREADS = std::atoi(argv[1]);
+    if (argc != 4) {
+        std::cerr << "ERROR: Expected arguments <thread_cnt> <path/input.og> <path/output.lay> (input: '";
+        std::cerr << argv[0];
+        for (int i = 1; i < argc; i++) std::cerr << " " << argv[i];
+        std::cerr << "')" << std::endl;
+        return 1;
     }
+    NTHREADS = std::atoi(argv[1]);
+    string input_path_str = argv[2];
+    string output_path = argv[3];
 
-    std::string input_path_str = INPUT_PATH;
     if (!std::filesystem::exists(input_path_str)) input_path_str = "pgsgd/" + input_path_str;
     std::cout << "Loading input (" << input_path_str << ")" << std::endl;
 
@@ -367,7 +368,7 @@ int main(int argc, char* argv[]) {
     END_ROI
 
 
-    std::cout << "Writing output (" << OUT_PATH << ")" << std::endl;
+    std::cout << "Writing output (" << output_path << ")" << std::endl;
     auto write_start = std::chrono::system_clock::now();
 
     // copy coords back to X, Y vectors
@@ -432,7 +433,7 @@ int main(int argc, char* argv[]) {
 
     // generate layout file
     odgi::algorithms::layout::Layout lay(X, Y);
-    ofstream f(OUT_PATH);
+    ofstream f(output_path);
     lay.serialize(f);
     f.close();
 
