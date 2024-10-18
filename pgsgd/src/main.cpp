@@ -43,41 +43,10 @@ void layout_kernel(cuda::layout_config_t config, double *etas, double *zetas, cu
 
         const int steps_per_thread = config.min_term_updates / nbr_threads;
 
-//#define profiling
-#ifdef profiling
-        auto total_duration_dist = std::chrono::duration<double>::zero(); // total time on computing distance: in seconds
-        auto total_duration_sgd = std::chrono::duration<double>::zero(); // total time on SGD: in seconds
-        // detailed analysis on different parts of Updating Coordinates Part
-        auto total_duration_compute_first = std::chrono::duration<double>::zero();
-        auto total_duration_load = std::chrono::duration<double>::zero();
-        auto total_duration_compute_second = std::chrono::duration<double>::zero();
-        auto total_duration_store = std::chrono::duration<double>::zero();
-        // detailed analysis on different parts of Getting Distance Part
-        auto total_duration_one_step_gen = std::chrono::duration<double>::zero();
-        auto total_duration_two_step_gen = std::chrono::duration<double>::zero();
-        auto total_duration_get_distance = std::chrono::duration<double>::zero();
-
-
-        std::chrono::high_resolution_clock::time_point start_dist;
-        std::chrono::high_resolution_clock::time_point end_dist;
-        std::chrono::high_resolution_clock::time_point start_sgd;
-        std::chrono::high_resolution_clock::time_point one_step_gen;
-        std::chrono::high_resolution_clock::time_point two_step_gen;
-
-        // detailed analysis on Updating Coordinates part
-        std::chrono::high_resolution_clock::time_point before_load;
-        std::chrono::high_resolution_clock::time_point after_load;
-        std::chrono::high_resolution_clock::time_point before_store;
-        std::chrono::high_resolution_clock::time_point after_store;
-#endif
-
         for (uint64_t iter = 0; iter < config.iter_max; iter++ ) {
             // synchronize all threads before each iteration
 #pragma omp barrier
             for (int step = 0; step < steps_per_thread; step++ ) {
-#ifdef profiling
-                start_dist = std::chrono::high_resolution_clock::now();
-#endif
                 // get path
                 uint32_t path_idx = rand_path(gen);
                 cuda::path_t p = path_data.paths[path_idx];
@@ -88,10 +57,6 @@ void layout_kernel(cuda::layout_config_t config, double *etas, double *zetas, cu
                 std::uniform_int_distribution<uint32_t> rand_step(0, p.step_count-1);
 
                 uint32_t s1_idx = rand_step(gen);
-#ifdef profiling
-                one_step_gen = std::chrono::high_resolution_clock::now();
-                total_duration_one_step_gen += std::chrono::duration_cast<std::chrono::nanoseconds>(one_step_gen - start_dist);
-#endif
                 uint32_t s2_idx;
                 if (iter + 1 >= uint64_t(config.first_cooling_iteration) || flip(gen)) {
                     if ((s1_idx > 0 && flip(gen)) || s1_idx == p.step_count-1) {
@@ -122,10 +87,6 @@ void layout_kernel(cuda::layout_config_t config, double *etas, double *zetas, cu
                         s2_idx = rand_step(gen);
                     } while (s1_idx == s2_idx);
                 }
-#ifdef profiling
-                two_step_gen = std::chrono::high_resolution_clock::now();
-                total_duration_two_step_gen += std::chrono::duration_cast<std::chrono::nanoseconds>(two_step_gen - one_step_gen);
-#endif
                 assert(s1_idx < p.step_count);
                 assert(s2_idx < p.step_count);
 
@@ -162,14 +123,6 @@ void layout_kernel(cuda::layout_config_t config, double *etas, double *zetas, cu
                 if (term_dist < 1e-9) {
                     term_dist = 1e-9;
                 }
-#ifdef profiling
-                end_dist = std::chrono::high_resolution_clock::now();
-                total_duration_get_distance += std::chrono::duration_cast<std::chrono::nanoseconds>(end_dist - two_step_gen);
-
-                total_duration_dist += std::chrono::duration_cast<std::chrono::nanoseconds>(end_dist - start_dist);
-
-                start_sgd = std::chrono::high_resolution_clock::now();
-#endif
 
                 double w_ij = 1.0 / term_dist;
 
@@ -183,10 +136,6 @@ void layout_kernel(cuda::layout_config_t config, double *etas, double *zetas, cu
                 int n1_offset = n1_use_other_end? 2: 0;
                 int n2_offset = n2_use_other_end? 2: 0;
 
-#ifdef profiling
-                before_load = std::chrono::high_resolution_clock::now();
-                total_duration_compute_first += std::chrono::duration_cast<std::chrono::nanoseconds>(before_load - start_sgd);
-#endif
                 std::atomic<float> *x1 = &node_data.nodes[n1_id].coords[n1_offset];
                 std::atomic<float> *x2 = &node_data.nodes[n2_id].coords[n2_offset];
                 std::atomic<float> *y1 = &node_data.nodes[n1_id].coords[n1_offset + 1];
@@ -194,10 +143,6 @@ void layout_kernel(cuda::layout_config_t config, double *etas, double *zetas, cu
 
                 double dx = float(x1->load() - x2->load());
                 double dy = float(y1->load() - y2->load());
-#ifdef profiling
-                after_load = std::chrono::high_resolution_clock::now();
-                total_duration_load += std::chrono::duration_cast<std::chrono::nanoseconds>(after_load - before_load);
-#endif
                 if (dx == 0.0) {
                     dx = 1e-9;
                 }
@@ -210,56 +155,12 @@ void layout_kernel(cuda::layout_config_t config, double *etas, double *zetas, cu
                 double r_x = r * dx;
                 double r_y = r * dy;
 
-#ifdef profiling
-                before_store = std::chrono::high_resolution_clock::now();
-                total_duration_compute_second += std::chrono::duration_cast<std::chrono::nanoseconds>(before_store - after_load);
-#endif
                 x1->store(x1->load() - float(r_x));
                 y1->store(y1->load() - float(r_y));
                 x2->store(x2->load() + float(r_x));
                 y2->store(y2->load() + float(r_y));
-#ifdef profiling
-                after_store = std::chrono::high_resolution_clock::now();
-                total_duration_store += std::chrono::duration_cast<std::chrono::nanoseconds>(after_store - before_store);
-                total_duration_sgd += std::chrono::duration_cast<std::chrono::nanoseconds>(after_store - start_sgd);
-#endif
             }
         }
-
-#ifdef profiling
-        std::stringstream msg;
-        msg << "Thread[" << tid << "]: Dataloading time = " << total_duration_dist.count() << " sec;\t" << "Compute time = " << total_duration_sgd.count() << " sec." << std::endl;
-
-        msg << std::left
-            << std::setw(40) << "Getting Distance Part Breakdown: " << std::endl
-            << std::setw(20) << "[0] One Step Gen: "
-            << std::setw(10) << total_duration_one_step_gen.count()
-            << std::setw(10)  << " sec;"
-            << std::setw(20) << "[1] Two Steps Gen: "
-            << std::setw(10) << total_duration_two_step_gen.count()
-            << std::setw(10)  << " sec;"
-            << std::setw(20) << "[2] Get Distance: "
-            << std::setw(10) << total_duration_get_distance.count()
-            << std::setw(10) << " sec."
-            << std::endl;
-
-        msg << std::setw(40) << "Updating Coordinate Part Breakdown: " << std::endl
-            << std::setw(20) << "[0] First Compute: "
-            << std::setw(10) << total_duration_compute_first.count()
-            << std::setw(10)  << " sec;"
-            << std::setw(20) << "[1] Load Pos: "
-            << std::setw(10) << total_duration_load.count()
-            << std::setw(10)  << " sec;"
-            << std::setw(20) << "[2] Second Compute: "
-            << std::setw(10) << total_duration_compute_second.count()
-            << std::setw(10)  << " sec;"
-            << std::setw(20) << "[3] Update Pos: "
-            << std::setw(10) << total_duration_store.count()
-            << std::setw(10)  << " sec."
-            << std::endl << std::endl;
-
-        std::cerr << msg.str();
-#endif
     }
 }
 
