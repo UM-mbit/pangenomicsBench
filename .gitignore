@@ -2,4 +2,6 @@
 **/bin
 **/Out
 *.swp
+pgsgd/data
 **/tags
+*.lay
