@@ -163,8 +163,7 @@ void layout_kernel(cuda::layout_config_t config, double *etas, double *zetas, cu
 int main(int argc, char* argv[]) {
     std::cout << "PGSGD benchmark:" << std::endl;
 
-    // set the number of threads when passed as argument
-    int NTHREADS = 6;
+    // get arguments: thread-count, input-path, output-path
     if (argc != 4) {
         std::cerr << "ERROR: Expected arguments <thread_cnt> <path/input.og> <path/output.lay> (input: '";
         std::cerr << argv[0];
@@ -172,7 +171,7 @@ int main(int argc, char* argv[]) {
         std::cerr << "')" << std::endl;
         return 1;
     }
-    NTHREADS = std::atoi(argv[1]);
+    int NTHREADS = std::atoi(argv[1]);
     string input_path_str = argv[2];
     string output_path = argv[3];
 
