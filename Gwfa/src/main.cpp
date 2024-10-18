@@ -70,11 +70,11 @@ int main(int argc, char* argv[]){
     auto iterEnd = std::chrono::system_clock::now();
     auto iterTime = std::chrono::duration_cast<std::chrono::microseconds>(
                                     iterEnd-iterStart).count();
-    std::cout << "i: " << i << std::endl;
-    std::cout << "iterTime: " << iterTime << "us" << std::endl;
-    std::cout << "(v0, end0), (v1, end1): (" << (*v0Buff)[i] << ", " << (*end0Buff)[i] << "), (" << (*v1Buff)[i] << ", " << (*end1Buff)[i] << ")" << std::endl;
-    std::cout << "queryGapLen: " << (*queryGapLenBuff)[i] << std::endl;
-    std::cout << std::endl;
+    //std::cout << "i: " << i << std::endl;
+    //std::cout << "iterTime: " << iterTime << "us" << std::endl;
+    //std::cout << "(v0, end0), (v1, end1): (" << (*v0Buff)[i] << ", " << (*end0Buff)[i] << "), (" << (*v1Buff)[i] << ", " << (*end1Buff)[i] << ")" << std::endl;
+    //std::cout << "queryGapLen: " << (*queryGapLenBuff)[i] << std::endl;
+    //std::cout << std::endl;
   }
   auto kernel_end = std::chrono::system_clock::now();
   std::cout << "Kernel Complete" << std::endl;
