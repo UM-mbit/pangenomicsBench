@@ -20,10 +20,6 @@
 
 using namespace std;
 
-const string PAN_FASTA_PATH = "/data2/jnms/chr20/chr20.pan.fasta";
-const string PAF_PATH = "/data2/jnms/chr20/chr20.paf";
-const string GFA_PATH = "chr20.gfa";
-
 
 typedef atomic_queue::AtomicQueue2<std::pair<seqwish::pos_t, uint64_t>, 2 << 16> range_atomic_queue_t;
 typedef atomic_queue::AtomicQueue2<std::pair<seqwish::match_t, bool>, 2 << 16> overlap_atomic_queue_t;
@@ -692,11 +688,19 @@ size_t compute_transitive_closures_kernel(
 
 int main(int argc, char* argv[]) {
     std::cout << "Transclosure benchmark:" << std::endl;
-    // set the number of threads when passed as argument
-    int NTHREADS = 6;
-    if (argc >= 2) {
-        NTHREADS = std::atoi(argv[1]);
+
+    // get arguments: thread-count, fasta-input-path, paf-input-path, output-path
+    if (argc != 5) {
+        std::cerr << "ERROR: Expected arguments <thread_cnt> <path/input.fasta> <path/input.paf> <path/output.gfa> (input: '";
+        std::cerr << argv[0];
+        for (int i = 1; i < argc; i++) std::cerr << " " << argv[i];
+        std::cerr << "')" << std::endl;
+        return 1;
     }
+    int NTHREADS = std::atoi(argv[1]);
+    string pan_fasta_path = argv[2];
+    string paf_path = argv[3];
+    string gfa_path = argv[4];
 
     const bool KEEP_TEMP = false;
 
@@ -710,7 +714,7 @@ int main(int argc, char* argv[]) {
     // build seqidx
     auto seqidx_ptr = std::make_unique<seqwish::seqindex_t>();
     auto& seqidx = *seqidx_ptr;
-    seqidx.build_index(PAN_FASTA_PATH);
+    seqidx.build_index(pan_fasta_path);
     seqidx.save();
 
     // parse alignments
@@ -719,7 +723,7 @@ int main(int argc, char* argv[]) {
     auto& aln_iitree = *aln_iitree_ptr;
     aln_iitree.open_writer();
     float sparse_match = 0;
-    auto& file = PAF_PATH;
+    auto& file = paf_path;
     uint64_t min_length = 0;
     seqwish::unpack_paf_alignments(file, aln_iitree, seqidx, min_length, sparse_match, NTHREADS);
 
@@ -767,9 +771,9 @@ int main(int argc, char* argv[]) {
     derive_links(seqidx, node_iitree, path_iitree, seq_id_cbv, seq_id_cbv_rank, seq_id_cbv_select, link_mmset, NTHREADS);
 
     // emit GFA
-    std::ofstream out(GFA_PATH.c_str());
+    std::ofstream out(gfa_path.c_str());
     emit_gfa(out, graph_length, seq_v_file, node_iitree, path_iitree, seq_id_cbv, seq_id_cbv_rank, seq_id_cbv_select, seqidx, link_mmset, NTHREADS);
-    std::cout << "Stored graph (" << GFA_PATH << ")" << std::endl;
+    std::cout << "Stored graph (" << gfa_path << ")" << std::endl;
     auto write_end = std::chrono::system_clock::now();
 
 

@@ -21,14 +21,14 @@ class PangenomicsBenchRunner(Runner):
 #outDir="out"
 #execAndLog("rm -rf {}".format(outDir))
 #runner = Runner(outDir)
-#app="./transclosure/bin/transclosure 8"
+#app="./transclosure/bin/transclosure 8 /data2/jnms/Shared/HPRCv2_chr20/chr20.pan.fasta /data2/jnms/Shared/HPRCv2_chr20/chr20.paf chr20.gfa"
 #runner.runVanillaApp(app, outputs=["chr20.gfa"])
-#app="./transclosure/bin/transclosure.prof 8"
+#app="./transclosure/bin/transclosure.prof 8 /data2/jnms/Shared/HPRCv2_chr20/chr20.pan.fasta /data2/jnms/Shared/HPRCv2_chr20/chr20.paf chr20.gfa"
 #runner.runVtuneUarch(app)
 #runner.runVtuneCache(app)
-#app="./transclosure/bin/transclosure.prof {}"
+#app="./transclosure/bin/transclosure.prof {} /data2/jnms/Shared/HPRCv2_chr20/chr20.pan.fasta /data2/jnms/Shared/HPRCv2_chr20/chr20.paf chr20.gfa"
 #runner.runThreadScaling(app, [1] + [4] + list(range(8, 65, 8)))
-#app="./transclosure/bin/transclosure.prof 1"
+#app="./transclosure/bin/transclosure.prof 1 /data2/jnms/Shared/HPRCv2_chr20/chr20.pan.fasta /data2/jnms/Shared/HPRCv2_chr20/chr20.paf chr20.gfa"
 #runner.runPinInstrCount(app)
 #runner.printResults()
 
