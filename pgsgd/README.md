@@ -4,12 +4,12 @@
 2. Move into `pgsgd` directory: `$ cd pangenomicsBench/pgsgd`
 3. Get odgi submodule: `$ git submodule update --init --recursive deps/odgi`
 4. Build ODGI (tested with cmake v3.28.3 and g++ v13.2.0); ODGI's dependencies are listed in its [repo](https://github.com/pangenome/odgi?tab=readme-ov-file#building-from-source): `$ cd deps/odgi; mkdir build; cd build; cmake ..; make -j; cd ../../..`
-5. Add libodgi to library path `$ export LD_LIBRARY_PATH=${pwd}/deps/odgi/lib:$LD_LIBRARY_PATH`
+5. Add libodgi to library path `$ export LD_LIBRARY_PATH=${PWD}/deps/odgi/lib:$LD_LIBRARY_PATH`
 5. Set vtune variable `export VTUNE_HOME=/opt/intel/oneapi/vtune/latest`
 6. Build pgsgd benchmark binary (note: use g++-11 compiler): `$ mkdir -p bin; make -j`
-7. Get preprocess pangenomes (chr20 takes some time; currently deactivated): `$ ./get_input.sh`
-8. Run benchmark (should generate the layout file `out_benchmark.lay`): `$ bin/pgsgd`
-9. Create png with ODGI: `$ deps/odgi/bin/odgi draw -i data/DRB1-3123.og -c out_benchmark.lay -p drb1_benchmark.png -C`
+7. ~~Get preprocess pangenomes (chr20 takes some time; currently deactivated): `$ ./get_input.sh`~~
+8. Run benchmark: `$ bin/pgsgd <thread-cnt> <path/input.og> <path/output.lay>`
+9. Create png with ODGI: `$ deps/odgi/bin/odgi draw -i <path/input.og> -c <path/layout.lay> -p <path/fig.png> -C`
 
 
 # Instruction for generating reference output
@@ -22,4 +22,3 @@
 # Profiling
 
 * Run from `pangenomicBench` directory (parent dir of `pgsgd`): `python mainRun.py`
-* Create output directory for all profiling files.
