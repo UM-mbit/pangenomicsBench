@@ -116,7 +116,7 @@ size_t calcNumSlices(std::string& seq){
   return (seq.size() + WORD_SIZE - 1) / WORD_SIZE;
 }
 
-ReusableState* getReusableState(Common::Params* params){
+ReusableState* getReusableState(const Common::Params* params){
 	  ReusableState* reusableState = new ReusableState{ 
                                           params->graph, 
                                           params->alignmentBandwidth };

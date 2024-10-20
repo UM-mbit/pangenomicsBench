@@ -85,7 +85,7 @@ size_t calcNumSlices(std::string& seq);
  * @param Params (we use graph and bandwidth from here)
  * @returns ReusableState used in the kernel
  */
-ReusableState* getReusableState(Common::Params* params);
+ReusableState* getReusableState(const Common::Params* params);
 
 /*
  * Get max scores for slices
