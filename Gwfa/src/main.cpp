@@ -55,11 +55,11 @@ int main(int argc, char* argv[]){
   std::cout << "Running Kernel" << std::endl;
   auto kernel_start = std::chrono::system_clock::now();
 #if (THREADING_ENABLED==1)
-  #pragma omp parallel 
-  printf("launching thread %d\n",omp_get_thread_num());
-  #pragma omp for
-#endif
+  #pragma omp parallel for
   for (int i=0; i < numIters; i++){ //loop over reads (or really anchors)
+#else
+  for (int i=0; i < numIters; i++){ //loop over reads (or really anchors)
+#endif
     auto iterStart = std::chrono::system_clock::now();
     //run the kernel
     gfa_ed_step((*zBuff)[i],
