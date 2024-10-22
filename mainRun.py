@@ -28,7 +28,7 @@ class PangenomicsBenchRunner(Runner):
 #runner.runVtuneCache(app)
 #app="./transclosure/bin/transclosure.prof {} /data2/jnms/Shared/HPRCv2_chr20/chr20.pan.fasta /data2/jnms/Shared/HPRCv2_chr20/chr20.paf chr20.gfa"
 #runner.runThreadScaling(app, [1] + [4] + list(range(8, 65, 8)))
-#app="./transclosure/bin/transclosure.prof 1 /data2/jnms/Shared/HPRCv2_chr20/chr20.pan.fasta /data2/jnms/Shared/HPRCv2_chr20/chr20.paf chr20.gfa"
+#app="/data2/jnms/pangenomicsBench/transclosure/bin/transclosure.prof 1 /data2/jnms/Shared/HPRCv2_chr20/chr20.pan.fasta /data2/jnms/Shared/HPRCv2_chr20/chr20.paf chr20.gfa"
 #runner.runPinInstrCount(app)
 #runner.printResults()
 
@@ -43,7 +43,7 @@ class PangenomicsBenchRunner(Runner):
 #runner.runVtuneCache(app)
 #app="./pgsgd/bin/pgsgd.prof {} /data2/jnms/Shared/HPRCv2_chr20/chr20.og out_benchmark.lay"
 #runner.runThreadScaling(app, [1] + [4] + list(range(8, 65, 8)))
-#app="./pgsgd/bin/pgsgd.prof 1 /data2/jnms/Shared/HPRCv2_chr20/chr20.og out_benchmark.lay"
+#app="/data2/jnms/pangenomicsBench/pgsgd/bin/pgsgd.prof 1 /data2/jnms/Shared/DRB1-3123/DRB1-3123.og out_benchmark.lay"
 #runner.runPinInstrCount(app)
 #runner.printResults()
 
