@@ -719,7 +719,7 @@ int main(int argc, char* argv[]) {
 
     // parse alignments
     const std::string aln_idx = temp_file::create("seqwish-", ".sqa");
-    auto aln_iitree_ptr = std::make_unique<mmmulti::iitree<uint64_t, seqwish::pos_t>>(aln_idx);
+    auto aln_iitree_ptr = std::make_unique<mmmulti::iitree<uint64_t, seqwish::pos_t>>(aln_idx, NTHREADS == 1);
     auto& aln_iitree = *aln_iitree_ptr;
     aln_iitree.open_writer();
     float sparse_match = 0;
@@ -733,9 +733,9 @@ int main(int argc, char* argv[]) {
     const std::string seq_v_file = temp_file::create("seqwish-", ".sqs");
     const std::string node_iitree_idx = temp_file::create("seqwish-", ".sqn");
     const std::string path_iitree_idx = temp_file::create("seqwish-", ".sqp");
-    auto node_iitree_ptr = std::make_unique<mmmulti::iitree<uint64_t, seqwish::pos_t>>(node_iitree_idx); // maps graph seq to input seq
+    auto node_iitree_ptr = std::make_unique<mmmulti::iitree<uint64_t, seqwish::pos_t>>(node_iitree_idx, NTHREADS == 1); // maps graph seq to input seq
     auto& node_iitree = *node_iitree_ptr;
-    auto path_iitree_ptr = std::make_unique<mmmulti::iitree<uint64_t, seqwish::pos_t>>(path_iitree_idx); // maps input seq to graph seq
+    auto path_iitree_ptr = std::make_unique<mmmulti::iitree<uint64_t, seqwish::pos_t>>(path_iitree_idx, NTHREADS == 1); // maps input seq to graph seq
     auto& path_iitree = *path_iitree_ptr;
 
     auto load_end = std::chrono::system_clock::now();
