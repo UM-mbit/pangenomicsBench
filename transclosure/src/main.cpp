@@ -358,7 +358,6 @@ size_t compute_transitive_closures_kernel(
     // we are mapping from the /last/ position in the matched range, not the first
     std::map<seqwish::pos_t, range_t> range_buffer;
     uint64_t bases_seen = 0;
-    std::thread* graph_writer = nullptr;
     //uint64_t last_seq_id = seqidx.seq_id_at(0);
     // collect based on a seed chunk of a given length
     for (uint64_t i = 0; i < input_seq_length; ) {
@@ -650,26 +649,9 @@ size_t compute_transitive_closures_kernel(
             q_seen_bv[curr_offset] = 1;
             ++bases_seen;
         }
-        // wait for completion of the last writer
-        if (graph_writer != nullptr) {
-            graph_writer->join();
-            delete graph_writer;
-        }
-        // spawn the graph writer thread
-        graph_writer = new std::thread(write_graph_chunk,
-                                       std::ref(seqidx),
-                                       std::ref(node_iitree),
-                                       std::ref(path_iitree),
-                                       std::ref(seq_v_out),
-                                       std::ref(range_buffer),
-                                       dsets_ptr,
-                                       repeat_max,
-                                       min_repeat_dist);
-    }
-    // clean up the last writer
-    if (graph_writer != nullptr) {
-        graph_writer->join();
-        delete graph_writer;
+
+        write_graph_chunk(std::ref(seqidx), std::ref(node_iitree), std::ref(path_iitree), std::ref(seq_v_out),
+                std::ref(range_buffer), dsets_ptr, repeat_max, min_repeat_dist);
     }
     // close the graph sequence vector
     size_t seq_bytes = seq_v_out.tellp();
