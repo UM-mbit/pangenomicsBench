@@ -508,15 +508,25 @@ size_t compute_transitive_closures_kernel(
         // ... compute how many set elements in each range and in total
         std::vector<uint64_t> q_curr_bv_counts; q_curr_bv_counts.resize(ranges.size());
         for (auto& x : q_curr_bv_counts) { x = 0; }
-        paryfor::parallel_for<uint64_t>(
-                0, ranges.size(), num_threads,
-                [&](uint64_t num_range, int tid) {
-                    for (uint64_t ii = ranges[num_range].first; ii < ranges[num_range].second; ++ii) {
-                        if (q_curr_bv[ii]) {
-                            ++q_curr_bv_counts[num_range];
+        if (num_threads > 1) {
+            paryfor::parallel_for<uint64_t>(
+                    0, ranges.size(), num_threads,
+                    [&](uint64_t num_range, int tid) {
+                        for (uint64_t ii = ranges[num_range].first; ii < ranges[num_range].second; ++ii) {
+                            if (q_curr_bv[ii]) {
+                                ++q_curr_bv_counts[num_range];
+                            }
                         }
+                    });
+        } else {
+            for (uint64_t num_range = 0; num_range < ranges.size(); num_range++) {
+                for (uint64_t ii = ranges[num_range].first; ii < ranges[num_range].second; ++ii) {
+                    if (q_curr_bv[ii]) {
+                        ++q_curr_bv_counts[num_range];
                     }
-                });
+                }
+            }
+        }
         uint64_t q_curr_bv_count = 0;
         for(auto& value : q_curr_bv_counts) { q_curr_bv_count += value; }
 
@@ -536,15 +546,25 @@ size_t compute_transitive_closures_kernel(
         }
 
         // ... fill in parallel
-        paryfor::parallel_for<uint64_t>(
-                0, ranges.size(), num_threads,
-                [&](uint64_t num_range, int tid) {
-                    for (uint64_t ii = ranges[num_range].first; ii < ranges[num_range].second; ++ii) {
-                        if (q_curr_bv[ii]) {
-                            q_curr_bv_vec[q_curr_bv_counts[num_range]++] = ii;
+        if (num_threads > 1) {
+            paryfor::parallel_for<uint64_t>(
+                    0, ranges.size(), num_threads,
+                    [&](uint64_t num_range, int tid) {
+                        for (uint64_t ii = ranges[num_range].first; ii < ranges[num_range].second; ++ii) {
+                            if (q_curr_bv[ii]) {
+                                q_curr_bv_vec[q_curr_bv_counts[num_range]++] = ii;
+                            }
                         }
+                    });
+        } else {
+            for (uint64_t num_range = 0; num_range < ranges.size(); num_range++) {
+                for (uint64_t ii = ranges[num_range].first; ii < ranges[num_range].second; ++ii) {
+                    if (q_curr_bv[ii]) {
+                        q_curr_bv_vec[q_curr_bv_counts[num_range]++] = ii;
                     }
-                });
+                }
+            }
+        }
 
         sdsl::bit_vector q_curr_bv_sdsl(seqidx.seq_length());
         for (auto p : q_curr_bv_vec) {
@@ -558,9 +578,21 @@ size_t compute_transitive_closures_kernel(
         // this initializes everything
         auto disjoint_sets = seqwish::DisjointSets(q_sets_data.data(), q_sets_data.size());
 
-        paryfor::parallel_for<uint64_t>(
-            0, ovlp.size(), num_threads, 10000,
-            [&](uint64_t k) {
+        if (num_threads > 1) {
+            paryfor::parallel_for<uint64_t>(
+                0, ovlp.size(), num_threads, 10000,
+                [&](uint64_t k) {
+                    auto& s = ovlp.at(k);
+                    auto& r = s.first;
+                    seqwish::pos_t p = r.pos;
+                    for (uint64_t j = r.start; j != r.end; ++j) {
+                        // unite both sides of the overlap
+                        disjoint_sets.unite(q_curr_rank(j), q_curr_rank(seqwish::offset(p)));
+                        seqwish::incr_pos(p);
+                    }
+                });
+        } else {
+            for (uint64_t k = 0; k < ovlp.size(); k++) {
                 auto& s = ovlp.at(k);
                 auto& r = s.first;
                 seqwish::pos_t p = r.pos;
@@ -569,22 +601,36 @@ size_t compute_transitive_closures_kernel(
                     disjoint_sets.unite(q_curr_rank(j), q_curr_rank(seqwish::offset(p)));
                     seqwish::incr_pos(p);
                 }
-            });
+            }
+        }
+
         // now read out our transclosures
         // maps from dset id to query base
         auto* dsets_ptr = new std::vector<std::pair<uint64_t, uint64_t>>(q_curr_bv_count);
         auto& dsets = *dsets_ptr;
         std::pair<uint64_t, uint64_t> max_pair = std::make_pair(std::numeric_limits<uint64_t>::max(), std::numeric_limits<uint64_t>::max());
-        paryfor::parallel_for<uint64_t>(
-            0, q_curr_bv_count, num_threads, 10000,
-            [&](uint64_t j) {
+        if (num_threads > 1) {
+            paryfor::parallel_for<uint64_t>(
+                0, q_curr_bv_count, num_threads, 10000,
+                [&](uint64_t j) {
+                    auto& p = q_curr_bv_vec[j];
+                    if (!q_seen_bv[p]) {
+                        dsets[j] = std::make_pair(disjoint_sets.find(q_curr_rank(p)), p);
+                    } else {
+                        dsets[j] = max_pair;
+                    }
+                });
+        } else {
+            for (uint64_t j = 0; j < q_curr_bv_count; j++) {
                 auto& p = q_curr_bv_vec[j];
                 if (!q_seen_bv[p]) {
                     dsets[j] = std::make_pair(disjoint_sets.find(q_curr_rank(p)), p);
                 } else {
                     dsets[j] = max_pair;
                 }
-            });
+            }
+        }
+
         //q_curr_bv_vec.clear();
         // remove excluded elements
         dsets.erase(std::remove_if(dsets.begin(), dsets.end(),
