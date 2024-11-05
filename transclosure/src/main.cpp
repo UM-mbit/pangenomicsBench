@@ -552,7 +552,7 @@ size_t compute_transitive_closures_kernel(
         for (auto& x : q_curr_bv_counts) { x = 0; }
         if (num_threads > 1) {
             paryfor::parallel_for<uint64_t>(
-                    0, ranges.size(), num_threads,
+                    0, ranges.size(), num_threads-1,
                     [&](uint64_t num_range, int tid) {
                         for (uint64_t ii = ranges[num_range].first; ii < ranges[num_range].second; ++ii) {
                             if (q_curr_bv[ii]) {
@@ -590,7 +590,7 @@ size_t compute_transitive_closures_kernel(
         // ... fill in parallel
         if (num_threads > 1) {
             paryfor::parallel_for<uint64_t>(
-                    0, ranges.size(), num_threads,
+                    0, ranges.size(), num_threads-1,
                     [&](uint64_t num_range, int tid) {
                         for (uint64_t ii = ranges[num_range].first; ii < ranges[num_range].second; ++ii) {
                             if (q_curr_bv[ii]) {
@@ -622,7 +622,7 @@ size_t compute_transitive_closures_kernel(
 
         if (num_threads > 1) {
             paryfor::parallel_for<uint64_t>(
-                0, ovlp.size(), num_threads, 10000,
+                0, ovlp.size(), num_threads-1, 10000,
                 [&](uint64_t k) {
                     auto& s = ovlp.at(k);
                     auto& r = s.first;
@@ -653,7 +653,7 @@ size_t compute_transitive_closures_kernel(
         std::pair<uint64_t, uint64_t> max_pair = std::make_pair(std::numeric_limits<uint64_t>::max(), std::numeric_limits<uint64_t>::max());
         if (num_threads > 1) {
             paryfor::parallel_for<uint64_t>(
-                0, q_curr_bv_count, num_threads, 10000,
+                0, q_curr_bv_count, num_threads-1, 10000,
                 [&](uint64_t j) {
                     auto& p = q_curr_bv_vec[j];
                     if (!q_seen_bv[p]) {
