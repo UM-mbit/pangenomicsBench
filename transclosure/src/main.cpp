@@ -404,21 +404,91 @@ size_t compute_transitive_closures_kernel(
                     //todo_seen.insert(range);
                 }
             });
-        std::atomic<bool> work_todo;
-        std::vector<std::atomic<bool>> explorings(num_threads);
-        work_todo.store(false);
-        auto worker_lambda =
-            [&](uint64_t tid) {
-                //auto& ovlp = ovlps[tid];
-                auto& exploring = explorings[tid];
-                while (!work_todo.load()) {
-                    std::this_thread::sleep_for(1ns);
+
+        if (num_threads > 1) {
+            std::atomic<bool> work_todo;
+            std::vector<std::atomic<bool>> explorings(num_threads - 1);
+            work_todo.store(false);
+            auto worker_lambda =
+                [&](uint64_t tid) {
+                    //auto& ovlp = ovlps[tid];
+                    auto& exploring = explorings[tid];
+                    while (!work_todo.load()) {
+                        std::this_thread::sleep_for(1ns);
+                    }
+                    exploring.store(true);
+                    std::pair<seqwish::pos_t, uint64_t> item;
+                    while (work_todo.load()) {
+                        if (todo_out.try_pop(item)) {
+                            exploring.store(true);
+                            auto& pos = item.first;
+                            auto& match_len = item.second;
+                            uint64_t n = !seqwish::is_rev(pos) ? seqwish::offset(pos) : seqwish::offset(pos) - match_len + 1;
+                            uint64_t range_start = n;
+                            uint64_t range_end = n + match_len;
+                            explore_overlaps({range_start, range_end, pos},
+                                             q_seen_bv,
+                                             q_curr_bv,
+                                             aln_iitree,
+                                             ovlp_q,
+                                             todo_in);
+                        } else {
+                            exploring.store(false);
+                            std::this_thread::sleep_for(0.00001ns);
+                        }
+                    }
+                    exploring.store(false);
+                };
+            // launch our threads to expand the overlap set in parallel
+            std::vector<std::thread> workers; workers.reserve(num_threads - 1);
+            for (uint64_t t = 0; t < num_threads - 1; ++t) {
+                workers.emplace_back(worker_lambda, t);
+            }
+            // manage the threads
+            uint64_t empty_iter_count = 0;
+            auto still_exploring = [&explorings]() {
+                bool ongoing = false;
+                for (auto& e : explorings) {
+                    ongoing = ongoing || e.load();
                 }
-                exploring.store(true);
+                return ongoing;
+            };
+            work_todo.store(true);
+            while (!todo_in.was_empty() || !todo.empty() || !todo_out.was_empty() || !ovlp_q.was_empty() || still_exploring() || ++empty_iter_count < 1000) {
+                std::this_thread::sleep_for(0.00001ns);
+                // read from todo_in, into todo
                 std::pair<seqwish::pos_t, uint64_t> item;
-                while (work_todo.load()) {
+                while (todo_in.try_pop(item)) {
+                    todo.push_back(item);
+                }
+                // then transfer to todo_out, until it's full
+                while (!todo.empty()) {
+                    empty_iter_count = 0;
+                    item = todo.front();
+                    if (todo_out.try_push(item)) {
+                        todo.pop_front();
+                    } else {
+                        break;
+                    }
+                }
+                // collect our overlaps
+                std::pair<seqwish::match_t, bool> o;
+                while (ovlp_q.try_pop(o)) {
+                    ovlp.push_back(o);
+                }
+            }
+            //std::cerr << "telling threads to stop" << std::endl;
+            work_todo.store(false);
+            assert(todo.empty() && todo_in.was_empty() && todo_out.was_empty() && ovlp_q.was_empty() && !still_exploring());
+            //std::cerr << "gonna join" << std::endl;
+            for (uint64_t t = 0; t < num_threads - 1; ++t) {
+                workers[t].join();
+            }
+        } else {
+            while (!todo_in.was_empty() || !todo.empty() || !todo_out.was_empty() || !ovlp_q.was_empty()) {
+                {
+                    std::pair<seqwish::pos_t, uint64_t> item;
                     if (todo_out.try_pop(item)) {
-                        exploring.store(true);
                         auto& pos = item.first;
                         auto& match_len = item.second;
                         uint64_t n = !seqwish::is_rev(pos) ? seqwish::offset(pos) : seqwish::offset(pos) - match_len + 1;
@@ -430,58 +500,30 @@ size_t compute_transitive_closures_kernel(
                                          aln_iitree,
                                          ovlp_q,
                                          todo_in);
-                    } else {
-                        exploring.store(false);
-                        std::this_thread::sleep_for(0.00001ns);
                     }
                 }
-                exploring.store(false);
-            };
-        // launch our threads to expand the overlap set in parallel
-        std::vector<std::thread> workers; workers.reserve(num_threads);
-        for (uint64_t t = 0; t < num_threads; ++t) {
-            workers.emplace_back(worker_lambda, t);
-        }
-        // manage the threads
-        uint64_t empty_iter_count = 0;
-        auto still_exploring = [&explorings]() {
-            bool ongoing = false;
-            for (auto& e : explorings) {
-                ongoing = ongoing || e.load();
-            }
-            return ongoing;
-        };
-        work_todo.store(true);
-        while (!todo_in.was_empty() || !todo.empty() || !todo_out.was_empty() || !ovlp_q.was_empty() || still_exploring() || ++empty_iter_count < 1000) {
-            std::this_thread::sleep_for(0.00001ns);
-            // read from todo_in, into todo
-            std::pair<seqwish::pos_t, uint64_t> item;
-            while (todo_in.try_pop(item)) {
-                todo.push_back(item);
-            }
-            // then transfer to todo_out, until it's full
-            while (!todo.empty()) {
-                empty_iter_count = 0;
-                item = todo.front();
-                if (todo_out.try_push(item)) {
-                    todo.pop_front();
-                } else {
-                    break;
+                // read from todo_in, into todo
+                std::pair<seqwish::pos_t, uint64_t> item;
+                while (todo_in.try_pop(item)) {
+                    todo.push_back(item);
+                }
+                // then transfer to todo_out, until it's full
+                while (!todo.empty()) {
+                    item = todo.front();
+                    if (todo_out.try_push(item)) {
+                        todo.pop_front();
+                    } else {
+                        break;
+                    }
+                }
+                // collect our overlaps
+                std::pair<seqwish::match_t, bool> o;
+                while (ovlp_q.try_pop(o)) {
+                    ovlp.push_back(o);
                 }
             }
-            // collect our overlaps
-            std::pair<seqwish::match_t, bool> o;
-            while (ovlp_q.try_pop(o)) {
-                ovlp.push_back(o);
-            }
         }
-        //std::cerr << "telling threads to stop" << std::endl;
-        work_todo.store(false);
-        assert(todo.empty() && todo_in.was_empty() && todo_out.was_empty() && ovlp_q.was_empty() && !still_exploring());
-        //std::cerr << "gonna join" << std::endl;
-        for (uint64_t t = 0; t < num_threads; ++t) {
-            workers[t].join();
-        }
+
         delete todo_in_ptr;
         delete todo_out_ptr;
         delete ovlp_q_ptr;
