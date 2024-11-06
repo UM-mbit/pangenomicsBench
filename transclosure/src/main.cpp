@@ -836,7 +836,7 @@ int main(int argc, char* argv[]) {
 
     // create paths
     const std::string link_mm_idx =  temp_file::create("seqwish-", ".sql");
-    auto link_mmset_ptr = std::make_unique<mmmulti::set<std::pair<seqwish::pos_t, seqwish::pos_t>>>(link_mm_idx);
+    auto link_mmset_ptr = std::make_unique<mmmulti::set<std::pair<seqwish::pos_t, seqwish::pos_t>>>(link_mm_idx, NTHREADS == 1);
     auto& link_mmset = *link_mmset_ptr;
     derive_links(seqidx, node_iitree, path_iitree, seq_id_cbv, seq_id_cbv_rank, seq_id_cbv_select, link_mmset, NTHREADS);
 
