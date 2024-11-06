@@ -32,3 +32,6 @@
 [submodule "transclosure/deps/seqwish"]
 	path = transclosure/deps/seqwish
 	url = https://github.com/nsmlzl/seqwish.git
+[submodule "Complete-Striped-Smith-Waterman-Library"]
+	path = Ssw/Complete-Striped-Smith-Waterman-Library
+	url = git@github.com:mengyao/Complete-Striped-Smith-Waterman-Library.git
