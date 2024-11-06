@@ -358,7 +358,6 @@ size_t compute_transitive_closures_kernel(
     // we are mapping from the /last/ position in the matched range, not the first
     std::map<seqwish::pos_t, range_t> range_buffer;
     uint64_t bases_seen = 0;
-    std::thread* graph_writer = nullptr;
     //uint64_t last_seq_id = seqidx.seq_id_at(0);
     // collect based on a seed chunk of a given length
     for (uint64_t i = 0; i < input_seq_length; ) {
@@ -405,21 +404,91 @@ size_t compute_transitive_closures_kernel(
                     //todo_seen.insert(range);
                 }
             });
-        std::atomic<bool> work_todo;
-        std::vector<std::atomic<bool>> explorings(num_threads);
-        work_todo.store(false);
-        auto worker_lambda =
-            [&](uint64_t tid) {
-                //auto& ovlp = ovlps[tid];
-                auto& exploring = explorings[tid];
-                while (!work_todo.load()) {
-                    std::this_thread::sleep_for(1ns);
+
+        if (num_threads > 1) {
+            std::atomic<bool> work_todo;
+            std::vector<std::atomic<bool>> explorings(num_threads - 1);
+            work_todo.store(false);
+            auto worker_lambda =
+                [&](uint64_t tid) {
+                    //auto& ovlp = ovlps[tid];
+                    auto& exploring = explorings[tid];
+                    while (!work_todo.load()) {
+                        std::this_thread::sleep_for(1ns);
+                    }
+                    exploring.store(true);
+                    std::pair<seqwish::pos_t, uint64_t> item;
+                    while (work_todo.load()) {
+                        if (todo_out.try_pop(item)) {
+                            exploring.store(true);
+                            auto& pos = item.first;
+                            auto& match_len = item.second;
+                            uint64_t n = !seqwish::is_rev(pos) ? seqwish::offset(pos) : seqwish::offset(pos) - match_len + 1;
+                            uint64_t range_start = n;
+                            uint64_t range_end = n + match_len;
+                            explore_overlaps({range_start, range_end, pos},
+                                             q_seen_bv,
+                                             q_curr_bv,
+                                             aln_iitree,
+                                             ovlp_q,
+                                             todo_in);
+                        } else {
+                            exploring.store(false);
+                            std::this_thread::sleep_for(0.00001ns);
+                        }
+                    }
+                    exploring.store(false);
+                };
+            // launch our threads to expand the overlap set in parallel
+            std::vector<std::thread> workers; workers.reserve(num_threads - 1);
+            for (uint64_t t = 0; t < num_threads - 1; ++t) {
+                workers.emplace_back(worker_lambda, t);
+            }
+            // manage the threads
+            uint64_t empty_iter_count = 0;
+            auto still_exploring = [&explorings]() {
+                bool ongoing = false;
+                for (auto& e : explorings) {
+                    ongoing = ongoing || e.load();
                 }
-                exploring.store(true);
+                return ongoing;
+            };
+            work_todo.store(true);
+            while (!todo_in.was_empty() || !todo.empty() || !todo_out.was_empty() || !ovlp_q.was_empty() || still_exploring() || ++empty_iter_count < 1000) {
+                std::this_thread::sleep_for(0.00001ns);
+                // read from todo_in, into todo
                 std::pair<seqwish::pos_t, uint64_t> item;
-                while (work_todo.load()) {
+                while (todo_in.try_pop(item)) {
+                    todo.push_back(item);
+                }
+                // then transfer to todo_out, until it's full
+                while (!todo.empty()) {
+                    empty_iter_count = 0;
+                    item = todo.front();
+                    if (todo_out.try_push(item)) {
+                        todo.pop_front();
+                    } else {
+                        break;
+                    }
+                }
+                // collect our overlaps
+                std::pair<seqwish::match_t, bool> o;
+                while (ovlp_q.try_pop(o)) {
+                    ovlp.push_back(o);
+                }
+            }
+            //std::cerr << "telling threads to stop" << std::endl;
+            work_todo.store(false);
+            assert(todo.empty() && todo_in.was_empty() && todo_out.was_empty() && ovlp_q.was_empty() && !still_exploring());
+            //std::cerr << "gonna join" << std::endl;
+            for (uint64_t t = 0; t < num_threads - 1; ++t) {
+                workers[t].join();
+            }
+        } else {
+            while (!todo_in.was_empty() || !todo.empty() || !todo_out.was_empty() || !ovlp_q.was_empty()) {
+                {
+                    std::pair<seqwish::pos_t, uint64_t> item;
                     if (todo_out.try_pop(item)) {
-                        exploring.store(true);
                         auto& pos = item.first;
                         auto& match_len = item.second;
                         uint64_t n = !seqwish::is_rev(pos) ? seqwish::offset(pos) : seqwish::offset(pos) - match_len + 1;
@@ -431,58 +500,30 @@ size_t compute_transitive_closures_kernel(
                                          aln_iitree,
                                          ovlp_q,
                                          todo_in);
-                    } else {
-                        exploring.store(false);
-                        std::this_thread::sleep_for(0.00001ns);
                     }
                 }
-                exploring.store(false);
-            };
-        // launch our threads to expand the overlap set in parallel
-        std::vector<std::thread> workers; workers.reserve(num_threads);
-        for (uint64_t t = 0; t < num_threads; ++t) {
-            workers.emplace_back(worker_lambda, t);
-        }
-        // manage the threads
-        uint64_t empty_iter_count = 0;
-        auto still_exploring = [&explorings]() {
-            bool ongoing = false;
-            for (auto& e : explorings) {
-                ongoing = ongoing || e.load();
-            }
-            return ongoing;
-        };
-        work_todo.store(true);
-        while (!todo_in.was_empty() || !todo.empty() || !todo_out.was_empty() || !ovlp_q.was_empty() || still_exploring() || ++empty_iter_count < 1000) {
-            std::this_thread::sleep_for(0.00001ns);
-            // read from todo_in, into todo
-            std::pair<seqwish::pos_t, uint64_t> item;
-            while (todo_in.try_pop(item)) {
-                todo.push_back(item);
-            }
-            // then transfer to todo_out, until it's full
-            while (!todo.empty()) {
-                empty_iter_count = 0;
-                item = todo.front();
-                if (todo_out.try_push(item)) {
-                    todo.pop_front();
-                } else {
-                    break;
+                // read from todo_in, into todo
+                std::pair<seqwish::pos_t, uint64_t> item;
+                while (todo_in.try_pop(item)) {
+                    todo.push_back(item);
+                }
+                // then transfer to todo_out, until it's full
+                while (!todo.empty()) {
+                    item = todo.front();
+                    if (todo_out.try_push(item)) {
+                        todo.pop_front();
+                    } else {
+                        break;
+                    }
+                }
+                // collect our overlaps
+                std::pair<seqwish::match_t, bool> o;
+                while (ovlp_q.try_pop(o)) {
+                    ovlp.push_back(o);
                 }
             }
-            // collect our overlaps
-            std::pair<seqwish::match_t, bool> o;
-            while (ovlp_q.try_pop(o)) {
-                ovlp.push_back(o);
-            }
         }
-        //std::cerr << "telling threads to stop" << std::endl;
-        work_todo.store(false);
-        assert(todo.empty() && todo_in.was_empty() && todo_out.was_empty() && ovlp_q.was_empty() && !still_exploring());
-        //std::cerr << "gonna join" << std::endl;
-        for (uint64_t t = 0; t < num_threads; ++t) {
-            workers[t].join();
-        }
+
         delete todo_in_ptr;
         delete todo_out_ptr;
         delete ovlp_q_ptr;
@@ -509,15 +550,25 @@ size_t compute_transitive_closures_kernel(
         // ... compute how many set elements in each range and in total
         std::vector<uint64_t> q_curr_bv_counts; q_curr_bv_counts.resize(ranges.size());
         for (auto& x : q_curr_bv_counts) { x = 0; }
-        paryfor::parallel_for<uint64_t>(
-                0, ranges.size(), num_threads,
-                [&](uint64_t num_range, int tid) {
-                    for (uint64_t ii = ranges[num_range].first; ii < ranges[num_range].second; ++ii) {
-                        if (q_curr_bv[ii]) {
-                            ++q_curr_bv_counts[num_range];
+        if (num_threads > 1) {
+            paryfor::parallel_for<uint64_t>(
+                    0, ranges.size(), num_threads-1,
+                    [&](uint64_t num_range, int tid) {
+                        for (uint64_t ii = ranges[num_range].first; ii < ranges[num_range].second; ++ii) {
+                            if (q_curr_bv[ii]) {
+                                ++q_curr_bv_counts[num_range];
+                            }
                         }
+                    });
+        } else {
+            for (uint64_t num_range = 0; num_range < ranges.size(); num_range++) {
+                for (uint64_t ii = ranges[num_range].first; ii < ranges[num_range].second; ++ii) {
+                    if (q_curr_bv[ii]) {
+                        ++q_curr_bv_counts[num_range];
                     }
-                });
+                }
+            }
+        }
         uint64_t q_curr_bv_count = 0;
         for(auto& value : q_curr_bv_counts) { q_curr_bv_count += value; }
 
@@ -537,15 +588,25 @@ size_t compute_transitive_closures_kernel(
         }
 
         // ... fill in parallel
-        paryfor::parallel_for<uint64_t>(
-                0, ranges.size(), num_threads,
-                [&](uint64_t num_range, int tid) {
-                    for (uint64_t ii = ranges[num_range].first; ii < ranges[num_range].second; ++ii) {
-                        if (q_curr_bv[ii]) {
-                            q_curr_bv_vec[q_curr_bv_counts[num_range]++] = ii;
+        if (num_threads > 1) {
+            paryfor::parallel_for<uint64_t>(
+                    0, ranges.size(), num_threads-1,
+                    [&](uint64_t num_range, int tid) {
+                        for (uint64_t ii = ranges[num_range].first; ii < ranges[num_range].second; ++ii) {
+                            if (q_curr_bv[ii]) {
+                                q_curr_bv_vec[q_curr_bv_counts[num_range]++] = ii;
+                            }
                         }
+                    });
+        } else {
+            for (uint64_t num_range = 0; num_range < ranges.size(); num_range++) {
+                for (uint64_t ii = ranges[num_range].first; ii < ranges[num_range].second; ++ii) {
+                    if (q_curr_bv[ii]) {
+                        q_curr_bv_vec[q_curr_bv_counts[num_range]++] = ii;
                     }
-                });
+                }
+            }
+        }
 
         sdsl::bit_vector q_curr_bv_sdsl(seqidx.seq_length());
         for (auto p : q_curr_bv_vec) {
@@ -559,9 +620,21 @@ size_t compute_transitive_closures_kernel(
         // this initializes everything
         auto disjoint_sets = seqwish::DisjointSets(q_sets_data.data(), q_sets_data.size());
 
-        paryfor::parallel_for<uint64_t>(
-            0, ovlp.size(), num_threads, 10000,
-            [&](uint64_t k) {
+        if (num_threads > 1) {
+            paryfor::parallel_for<uint64_t>(
+                0, ovlp.size(), num_threads-1, 10000,
+                [&](uint64_t k) {
+                    auto& s = ovlp.at(k);
+                    auto& r = s.first;
+                    seqwish::pos_t p = r.pos;
+                    for (uint64_t j = r.start; j != r.end; ++j) {
+                        // unite both sides of the overlap
+                        disjoint_sets.unite(q_curr_rank(j), q_curr_rank(seqwish::offset(p)));
+                        seqwish::incr_pos(p);
+                    }
+                });
+        } else {
+            for (uint64_t k = 0; k < ovlp.size(); k++) {
                 auto& s = ovlp.at(k);
                 auto& r = s.first;
                 seqwish::pos_t p = r.pos;
@@ -570,22 +643,36 @@ size_t compute_transitive_closures_kernel(
                     disjoint_sets.unite(q_curr_rank(j), q_curr_rank(seqwish::offset(p)));
                     seqwish::incr_pos(p);
                 }
-            });
+            }
+        }
+
         // now read out our transclosures
         // maps from dset id to query base
         auto* dsets_ptr = new std::vector<std::pair<uint64_t, uint64_t>>(q_curr_bv_count);
         auto& dsets = *dsets_ptr;
         std::pair<uint64_t, uint64_t> max_pair = std::make_pair(std::numeric_limits<uint64_t>::max(), std::numeric_limits<uint64_t>::max());
-        paryfor::parallel_for<uint64_t>(
-            0, q_curr_bv_count, num_threads, 10000,
-            [&](uint64_t j) {
+        if (num_threads > 1) {
+            paryfor::parallel_for<uint64_t>(
+                0, q_curr_bv_count, num_threads-1, 10000,
+                [&](uint64_t j) {
+                    auto& p = q_curr_bv_vec[j];
+                    if (!q_seen_bv[p]) {
+                        dsets[j] = std::make_pair(disjoint_sets.find(q_curr_rank(p)), p);
+                    } else {
+                        dsets[j] = max_pair;
+                    }
+                });
+        } else {
+            for (uint64_t j = 0; j < q_curr_bv_count; j++) {
                 auto& p = q_curr_bv_vec[j];
                 if (!q_seen_bv[p]) {
                     dsets[j] = std::make_pair(disjoint_sets.find(q_curr_rank(p)), p);
                 } else {
                     dsets[j] = max_pair;
                 }
-            });
+            }
+        }
+
         //q_curr_bv_vec.clear();
         // remove excluded elements
         dsets.erase(std::remove_if(dsets.begin(), dsets.end(),
@@ -650,26 +737,9 @@ size_t compute_transitive_closures_kernel(
             q_seen_bv[curr_offset] = 1;
             ++bases_seen;
         }
-        // wait for completion of the last writer
-        if (graph_writer != nullptr) {
-            graph_writer->join();
-            delete graph_writer;
-        }
-        // spawn the graph writer thread
-        graph_writer = new std::thread(write_graph_chunk,
-                                       std::ref(seqidx),
-                                       std::ref(node_iitree),
-                                       std::ref(path_iitree),
-                                       std::ref(seq_v_out),
-                                       std::ref(range_buffer),
-                                       dsets_ptr,
-                                       repeat_max,
-                                       min_repeat_dist);
-    }
-    // clean up the last writer
-    if (graph_writer != nullptr) {
-        graph_writer->join();
-        delete graph_writer;
+
+        write_graph_chunk(std::ref(seqidx), std::ref(node_iitree), std::ref(path_iitree), std::ref(seq_v_out),
+                std::ref(range_buffer), dsets_ptr, repeat_max, min_repeat_dist);
     }
     // close the graph sequence vector
     size_t seq_bytes = seq_v_out.tellp();
@@ -719,7 +789,7 @@ int main(int argc, char* argv[]) {
 
     // parse alignments
     const std::string aln_idx = temp_file::create("seqwish-", ".sqa");
-    auto aln_iitree_ptr = std::make_unique<mmmulti::iitree<uint64_t, seqwish::pos_t>>(aln_idx);
+    auto aln_iitree_ptr = std::make_unique<mmmulti::iitree<uint64_t, seqwish::pos_t>>(aln_idx, NTHREADS == 1);
     auto& aln_iitree = *aln_iitree_ptr;
     aln_iitree.open_writer();
     float sparse_match = 0;
@@ -733,9 +803,9 @@ int main(int argc, char* argv[]) {
     const std::string seq_v_file = temp_file::create("seqwish-", ".sqs");
     const std::string node_iitree_idx = temp_file::create("seqwish-", ".sqn");
     const std::string path_iitree_idx = temp_file::create("seqwish-", ".sqp");
-    auto node_iitree_ptr = std::make_unique<mmmulti::iitree<uint64_t, seqwish::pos_t>>(node_iitree_idx); // maps graph seq to input seq
+    auto node_iitree_ptr = std::make_unique<mmmulti::iitree<uint64_t, seqwish::pos_t>>(node_iitree_idx, NTHREADS == 1); // maps graph seq to input seq
     auto& node_iitree = *node_iitree_ptr;
-    auto path_iitree_ptr = std::make_unique<mmmulti::iitree<uint64_t, seqwish::pos_t>>(path_iitree_idx); // maps input seq to graph seq
+    auto path_iitree_ptr = std::make_unique<mmmulti::iitree<uint64_t, seqwish::pos_t>>(path_iitree_idx, NTHREADS == 1); // maps input seq to graph seq
     auto& path_iitree = *path_iitree_ptr;
 
     auto load_end = std::chrono::system_clock::now();
@@ -766,7 +836,7 @@ int main(int argc, char* argv[]) {
 
     // create paths
     const std::string link_mm_idx =  temp_file::create("seqwish-", ".sql");
-    auto link_mmset_ptr = std::make_unique<mmmulti::set<std::pair<seqwish::pos_t, seqwish::pos_t>>>(link_mm_idx);
+    auto link_mmset_ptr = std::make_unique<mmmulti::set<std::pair<seqwish::pos_t, seqwish::pos_t>>>(link_mm_idx, NTHREADS == 1);
     auto& link_mmset = *link_mmset_ptr;
     derive_links(seqidx, node_iitree, path_iitree, seq_id_cbv, seq_id_cbv_rank, seq_id_cbv_select, link_mmset, NTHREADS);
 
