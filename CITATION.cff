@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "PangenomicsBench"
+authors:
+  - family-names: Kaplan
+    given-names: Noah
+    orcid: 0000-0002-5299-5869
+  - family-names: "Schmelzle"
+    given-names: "Jan-Niklas"
+version: 0.0.1
+abstract: "PangenomicsBench is a benchmark suite for pangenomics algorithms"
+date-released: "2024-11-26"
+repository-code: "https://github.com/UM-mbit/pangenomicsBench"
+keywords:
+  - pangenome
+  - pangenome graph
+  - variation graph
+  - benchmark
