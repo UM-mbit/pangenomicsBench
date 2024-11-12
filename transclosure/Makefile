@@ -8,7 +8,7 @@ EXE:=transclosure
 
 PROF_UTILS=$(CWD)/../ProfileScripts/RoiCppHeaders
 CWD:=$(shell pwd)
-CXXFLAGS:= -std=gnu++14 -Wall -O3 -fopenmp -pthread -march=native #-g
+CXXFLAGS:= -std=gnu++14 -Wall -O3 -fopenmp -pthread -march=native -g3
 INCLUDE_FLAGS := \
 	-Ideps/seqwish/src \
 	-Ideps/seqwish/deps/sdsl-lite/include \

@@ -8,7 +8,7 @@ EXE:=pgsgd
 
 PROF_UTILS=$(CWD)/../ProfileScripts/RoiCppHeaders
 CWD:=$(shell pwd)
-CXXFLAGS:= -std=c++17 -Wall -O3 -fopenmp
+CXXFLAGS:= -std=c++17 -Wall -O3 -fopenmp -g3
 INCLUDE_FLAGS := -I$(PROF_UTILS)/include -I$(VTUNE_HOME)/include -I$(CWD)/deps/odgi/src -I$(CWD)/deps/odgi/src/algorithms -I$(CWD)/deps/odgi/deps/libhandlegraph/src/include -I$(CWD)/deps/odgi/deps/DYNAMIC/include -I$(CWD)/deps/odgi/deps/hopscotch-map/include -I$(CWD)/deps/odgi/deps/sparsepp/sparsepp -I$(CWD)/deps/odgi/deps/flat_hash_map -I$(CWD)/deps/odgi/deps/atomicbitvector/include -I$(CWD)/deps/odgi/deps/Xoshiro-cpp -I$(CWD)/deps/odgi/deps/dirtyzipf -I$(CWD)/deps/odgi/deps/gfakluge/src -I$(CWD)/deps/odgi/deps/gfakluge/src/tinyFA -I$(CWD)/deps/odgi/deps/atomic_queue/include/atomic_queue -I$(CWD)/deps/odgi/deps/sdsl-lite/include -I$(CWD)/deps/odgi/deps/PicoSHA2 -I$(CWD)/deps/odgi/deps/lodepng
 LD_LIB_DIR_FLAGS := -L$(PROF_UTILS)/lib -L$(VTUNE_HOME)/lib64 -L$(CWD)/deps/odgi/lib
 LD_LIB_FLAGS := -lprofileUtils -littnotify -lodgi -fopenmp -ldl
