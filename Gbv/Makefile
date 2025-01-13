@@ -2,7 +2,7 @@ OMP_ENABLED?=0
 VTUNE_ENABLED?=0
 
 #Note this is tested on vtune 2024.1
-VTUNE_HOME=/opt/intel/oneapi/vtune/latest
+#VTUNE_HOME=/opt/intel/oneapi/vtune/latest
 
 #this file is mostly canabilized from graphaligner. We're not linking 
 #Graphaligner as a library, we're pretty much building this kernal code 

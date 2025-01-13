@@ -1,11 +1,11 @@
-VTUNE_HOME=/opt/intel/oneapi/vtune/latest
+#VTUNE_HOME=/opt/intel/oneapi/vtune/latest
 
 SRC_DIR:=src
 BIN_DIR:=bin
 OBJ_DIR:=obj
 
-CXX ?= g++
-CC ?= gcc
+CXX ?= g++-11
+CC ?= gcc-11
 EXE:=gwfa
 
 

@@ -1,3 +1,15 @@
+# Building GWFA
+1. Ensure that the environment variable `VTUNE_HOME` points to the vtune
+   directory (e.g. `export VTUNE_HOME=/opt/intel/oneapi/vtune/latest`).
+2. Build the kernel with `make -j`
+
+# Running GWFA
+Run the kernel with the command
+`./bin/gwfa <path to data> <num iterations, or blank>`
+Example with `$KERNEL_DATA` pointing to the kernel data directory
+`./bin/gwfa $KERNEL_DATA/Gwfa/McChm13 30`:
+
+# Generating Input
 Please note that the raw inputs as generated from running the kernel do not
 include the graph. You must move the graph there manually and title it
 "graph.gfa"
