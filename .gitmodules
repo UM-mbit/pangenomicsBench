@@ -16,7 +16,7 @@
 	path = Gbwt/deps/sdsl-lite
 	url = git@github.com:vgteam/sdsl-lite.git
 [submodule "pgsgd/deps/odgi"]
-	path = pgsgd/deps/odgi
+	path = Pgsgd/deps/odgi
 	url = git@github.com:nsmlzl/odgi.git
 [submodule "minigraphDumper"]
 	path = Gwfa/deps/minigraphDumper
@@ -30,5 +30,5 @@
 	path = ProfileScripts
 	url = git@github.com:kaplannp/OneStopProfileShop.git
 [submodule "transclosure/deps/seqwish"]
-	path = transclosure/deps/seqwish
+	path = Tc/deps/seqwish
 	url = https://github.com/nsmlzl/seqwish.git
