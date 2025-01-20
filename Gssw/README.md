@@ -19,13 +19,35 @@ Example with `$KERNEL_DATA` pointing to the kernel data directory
 `./bin/gssw $KERNEL_DATA/Gssw/McFirst1e4Inputs 30`:
 
 # Generating Inputs
-Run the command
-`vg map -d <path to chr20 + header with gcsa, pg (or vg), and gcsa.lcp files> 
--t 1 -F <path to reads.fa>`
-An example
-`vg map -d graphDir/chr20.hprc-v1.0-pggb -t 1 -F reads.fa`
-The GraphDir directory should contain chr20.hprc-v1.0-pggb.pg, 
-chr20.hprc-v1.0-pggb.gcsa, and chr20.hprc-v1.0-pggb.gcsa.lcp.
+These runs were computed by running a modified version of vg map.
+`https://github.com/kaplannp/vg/tree/dumper`
+They use Illumina reads from the HPRC v1 assemblies for HG002.
+For a graph, they use the HPRC v1 chrom20 assembly constructed via Minigraph
+Cactus.
+After running vg futher filtering commands were used to get a smaller subset:
+`jq '.[:1000]' graph.json > graph1.json.copy` extracts the first 1000 elements
+`head -n 1000 reads.txt > reads.txt.copy` gives the first 1000 reads
+We use
+`jq -s . graph.json > tmp && mv tmp graph.json`
+to correct the formating errors
+
+The graph in file contains a json serialized version of the gssw graph
+structure. The reads contain one read per line
+The format of the json graph is this:
+```                                                                                   
+graph                                                                                 
+  + nodes                                                                             
+    + alignment (null to start)                                                       
+    + count_next the number of nodes reachable from this node                         
+    + next list of the nodes reachable from this node                                 
+    + count_prev number of nodes with edges to this node                              
+    + prev list of the nodes with edges to this node                                  
+    + ptr id of this node                                                             
+    + num is the numerical conversion of sequence (a=0, g=1, c=2, t=3) Not            
+      sure exactly which mapping, but that's the idea                                 
+    + len is length of sequence                                                       
+    + id I think should map to the cigar strings                                      
+```                                                                                   
 
 # Understanding Outputs
 Each run of the kernel generates one line in the output file. The output is not
@@ -33,6 +55,3 @@ json. Each line has the format
 ```
 <BestScore>@<FirstNodeOffset>:<GraphNode>[<CigarStringThroughGraphNodeSequence>]<GraphNode>[<CigarStringThroughGraphNodeSequence]...
 ```
-
-TODO gotta update this when we hear from Dev.
-

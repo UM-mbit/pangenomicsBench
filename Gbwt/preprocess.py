@@ -28,9 +28,9 @@ def initArgs():
     parser.add_argument('--highRange', type=int, default=10, 
             help='The largest query we want to generate (default: 10)')
     parser.add_argument('--inputFile', type=str, required=True, 
-            help='Input filepath to a gbz (required)')
-    parser.add_argument('--queriesPerHaplotype', type=int, default=500, 
-            help='Queries per haplotype (default: 500)')
+            help='Input filepath to a gaf with paths (required)')
+    parser.add_argument('--totalNumQueries', type=int, default=1000000, 
+            help='Total num queries (even distributed) (default: 1e6)')
     parser.add_argument('--randomSeed', type=int, default=42, 
             help='Random Seed (default:42)')
 
@@ -48,6 +48,9 @@ def sampleHaplotype(hapl, lowRange, highRange, nQueries):
     @param int nQueries how many queries to extract
     @returns list<list<int>> a bunch of samples haplotypes
     '''
+    if len(hapl) < highRange + 1:
+        print("Wow! this haplotype is tiny! smaller than highRange! we're not sampling from it")
+        return []
     queries = []
     for i in range(nQueries):
         queryLen = random.randint(lowRange, highRange)
@@ -81,25 +84,33 @@ def main():
     outDir = initDir("Inputs")
     random.seed(args.randomSeed)
 
-    #generate gbwt output
-    os.system("vg gbwt -Z {} -o {}.gbwt".format(
-        args.inputFile, os.path.join(outDir, "g")))
-    #generate temporary gaf of the paths
-    os.system("vg paths -x {} -A -H> {}".format(
-        args.inputFile, os.path.join(outDir, ".tmpExtractedPaths.gaf")))
-
     #parse the haplotypes from the file
-    rawDf = pd.read_csv(os.path.join(outDir, ".tmpExtractedPaths.gaf"), 
-            delimiter="\t", header=None)
+    rawDf = pd.read_csv(args.inputFile, delimiter="\t", header=None)
     #some have backwards paths. We don't consider these. Just forward paths
     df = rawDf.loc[~rawDf[5].apply(lambda x: '<' in x)] 
     haplotypes = df[5].apply(lambda x: [int(s) for s in x[1:].split('>')])
+    haplotypeNames = df[0]
+
+    #this is about changing the number of samples per path based on the length
+    #of the path
+    sizes = df[1].astype(int)
+    totalLens = sum(sizes)
+    nQueriesEachPath = ((args.totalNumQueries * sizes) / totalLens).astype(int)
+
     
     #sample the haplotypes
     allQueries = []
-    for hapl in haplotypes:
+    for name, size, hapl, nQueries in zip(haplotypeNames,sizes,haplotypes,nQueriesEachPath):
+        #adds a metadata line
+        metadata = "HaplotypeMetadata: name={} size={} nQueries={}".format(
+            name, size, nQueries)
+        print(metadata)
+        allQueries.append([[metadata]]) #double [[]] just help formating later.
+
+        #do the actual sampling
         haplQueries = sampleHaplotype(hapl, args.lowRange, 
-                                      args.highRange, args.queriesPerHaplotype)
+                                      args.highRange, nQueries)
+
         allQueries.append(haplQueries)
 
     #dump the queries to a file
@@ -112,9 +123,6 @@ def main():
                     queryStr += ">"
                 wfile.write(queryStr[:-1])
                 wfile.write("\n")
-
-    #cleanup
-    os.system("rm {}".format(os.path.join(outDir, ".tmpExtractedPaths.gaf")))
 
 if __name__ == '__main__':
     main()

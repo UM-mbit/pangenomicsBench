@@ -20,6 +20,14 @@ The GBWT kernel is run with the command
 e.g.
 
 `./bin/gbwt Kernels/Gbwt/McFullGraph1e7 30`
+
+# Generating the Input
+These inputs are generated from the MinigraphCactus pagnenome graph from HPRC V1
+for chromosome 20. They are random subsamplings of haplotype paths through the
+graph (queries.txt). This uses the preprocess script included. using low query
+length of 1 and high of 100. With paths extracted like this
+`vg paths -x hprc-v1.0-mc-chm13.xg -A -H -g hprc-v1.0-mc-chm13.gbwt > extractedPaths.gaf`
+We also download the gbwt file for that pangenome.
     
 
 # Understanding Outputs
