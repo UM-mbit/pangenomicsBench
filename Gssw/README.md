@@ -6,6 +6,7 @@
 2. Create python 3.8 environment. Python of later version could cause the
    program to fail to build.
    `conda create -n vg python=3.8`
+   activate the environment
 3. Build Gssw library
    `cd deps/gssw && make -j && cd ../..`
 4. Build the kernel
