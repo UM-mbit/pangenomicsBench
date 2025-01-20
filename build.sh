@@ -27,7 +27,7 @@ GSSW_BUILD_FAILED=0
 cd Gssw
 conda create -n vgPgBench python=3.8 -y
 conda activate vgBench || GSSW_BUILD_FAILED=1
-cd deps/vg
+cd deps/Gssw
 make -j || GSSW_BUILD_FAILED=1
 cd ../..
 make -j || GSSW_BUILD_FAILED=1
@@ -39,7 +39,8 @@ cd Gwfa
 make -j || GWFA_BUILD_FAILED=1
 cd ..
 
-echo "GBV_BUILD_FAILED=$GBV_BUILD_FAILED"
-echo "GBWT_BUILD_FAILED=$GBWT_BUILD_FAILED"
-echo "GSSW_BUILD_FAILED=$GSSW_BUILD_FAILED"
-echo "GWFA_BUILD_FAILED=$GWFA_BUILD_FAILED"
+echo "0 means built with no error. 1 means built failed
+echo "GBV_BUILD_STATUS=$GBV_BUILD_FAILED"
+echo "GBWT_BUILD_STATUS=$GBWT_BUILD_FAILED"
+echo "GSSW_BUILD_STATUS=$GSSW_BUILD_FAILED"
+echo "GWFA_BUILD_STATUS=$GWFA_BUILD_FAILED"
