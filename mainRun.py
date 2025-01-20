@@ -33,6 +33,7 @@ RUN_PIN = False
 #useful variables
 cwd = os.getcwd()
 pinRuns = []
+assert "KERNEL_DATA" in os.environ, "Please set KERNEL_DATA to the kernel data directory"
 
 #Prepare output directory
 os.system("rm -rf AllRunsOut")
