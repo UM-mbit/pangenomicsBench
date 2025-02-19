@@ -43,10 +43,10 @@ os.system("mkdir AllRunsOut")
 #kernel time: 28096616us
 #write time: 549466us
 gsswRunner = Runner("AllRunsOut/Gssw")
-gsswRunner.runVanillaApp("{}/Gssw/bin/gssw.prof $KERNEL_DATA/Gssw/McFirst1e4Inputs".format(cwd))
-if RUN_UARCH: gsswRunner.runVtuneUarch("{}/Gssw/bin/gssw.prof $KERNEL_DATA/Gssw/McFirst1e4Inputs".format(cwd))
-if RUN_CACHE: gsswRunner.runVtuneCache("{}/Gssw/bin/gssw.prof $KERNEL_DATA/Gssw/McFirst1e4Inputs".format(cwd))
-pinRuns.append(lambda:gsswRunner.runPinInstrCount("{}/Gssw/bin/gssw.prof $KERNEL_DATA/Gssw/McFirst1e3Inputs".format(cwd)))
+gsswRunner.runVanillaApp("{}/Gssw/bin/gssw.prof $KERNEL_DATA/Gssw/McFirst1e4Reads".format(cwd))
+if RUN_UARCH: gsswRunner.runVtuneUarch("{}/Gssw/bin/gssw.prof $KERNEL_DATA/Gssw/McFirst1e4Reads".format(cwd))
+if RUN_CACHE: gsswRunner.runVtuneCache("{}/Gssw/bin/gssw.prof $KERNEL_DATA/Gssw/McFirst1e4Reads".format(cwd))
+pinRuns.append(lambda:gsswRunner.runPinInstrCount("{}/Gssw/bin/gssw.prof $KERNEL_DATA/Gssw/McFirst1e3Reads".format(cwd)))
 
 #load time: 27095355us
 #kernel time: 23283850us
