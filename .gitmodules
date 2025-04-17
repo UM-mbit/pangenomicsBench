@@ -1,6 +1,3 @@
-[submodule "GsswSrc"]
-	path = Gssw/deps/Gssw
-	url = git@github.com:vgteam/gssw.git
 [submodule "vgGsswDump"]
 	path = Gssw/deps/vg
 	url = git@github.com:kaplannp/vg.git
