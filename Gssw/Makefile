@@ -5,7 +5,7 @@ SRC_DIR:=src
 BIN_DIR:=bin
 OBJ_DIR:=obj
 
-CXX ?= g++-11
+CXX := g++-11
 EXE:=gssw
 
 CWD:=$(shell pwd)
