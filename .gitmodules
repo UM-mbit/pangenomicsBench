@@ -29,3 +29,6 @@
 [submodule "transclosure/deps/seqwish"]
 	path = Tc/deps/seqwish
 	url = https://github.com/nsmlzl/seqwish.git
+[submodule "Gssw/deps/Gssw"]
+	path = Gssw/deps/Gssw
+	url = git@github.com:kaplannp/gssw.git
