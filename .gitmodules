@@ -32,3 +32,6 @@
 [submodule "Gssw/deps/Gssw"]
 	path = Gssw/deps/Gssw
 	url = git@github.com:kaplannp/gssw.git
+[submodule "Pgsgd_gpu/odgi"]
+	path = Pgsgd_gpu/odgi
+	url = git@github.com:pangenome/odgi.git
