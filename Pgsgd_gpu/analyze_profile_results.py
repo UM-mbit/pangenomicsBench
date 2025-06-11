@@ -8,7 +8,7 @@ d = np.zeros((30,3))
 
 for i in range(len(report)):
     occupancy = report[i]['sm__warps_active.avg.pct_of_peak_sustained_active'].value()
-    warp_utilization = report[i]['smsp__thread_inst_executed_pred_on_per_inst_executed.ratio'].value() #/ 32.0
+    warp_utilization = report[i]['smsp__thread_inst_executed_pred_on_per_inst_executed.ratio'].value() * 100.0 / 32.0
     mem_throughput = report[i]['gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed'].value()
 
     d[i] = [occupancy, warp_utilization, mem_throughput]
