@@ -32,3 +32,12 @@
 [submodule "Gssw/deps/Gssw"]
 	path = Gssw/deps/Gssw
 	url = git@github.com:kaplannp/gssw.git
+[submodule "TSUNAMI_PACT"]
+	path = GpuWfa/deps/TSUNAMI_PACT
+	url = git@github.com:giuliagerometta/TSUNAMI_PACT.git
+[submodule "WFA2-lib"]
+	path = GpuWfa/deps/WFA2-lib
+	url = git@github.com:smarco/WFA2-lib.git
+[submodule "WFA-GPU"]
+	path = GpuWfa/deps/WFA-GPU
+	url = git@github.com:quim0/WFA-GPU.git
