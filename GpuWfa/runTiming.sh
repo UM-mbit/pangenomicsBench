@@ -82,7 +82,7 @@ echo "($(paste -sd + wfa2Results.txt)) /$NUM_ITERS" | bc -l
 
 echo "################################################################################"
 echo "RUNNING FOR 130K"
-echo "(TSUNAMI crashes, so those lines are commented out)"
+echo "(skipping TSUNAMI for 130K because of memory limitataions. Uncomment lines in this script to run TSUNAMI)"
 echo "################################################################################"
 #### Build the dataset
 # 130592 is average length from wfmash. 500 was found to give about half the time of 1000 units, so we assume this is enough work to be representative
@@ -96,11 +96,13 @@ rm -f wfa2Results.txt && touch wfa2Results.txt
 
 for i in $(seq 1 $NUM_ITERS); do
   ./deps/WFA2-lib/build/align_benchmark --algorithm gap-affine-wfa -i sequencesWfa2Format.txt --affine-penalties 0,4,6,2 --num-threads 64 |& grep -Po "Time.Benchmark *\d+\.\d+ s" | /usr/bin/grep -Po "\d+\.\d+" >> wfa2Results.txt
+  #uncomment to run tsunami for 130K, but it will likely run out of memory
   #./deps/TSUNAMI_PACT/bin/wfa_gpu 4 6 2 sequences.txt 2000 1
 
 done
 
 echo "WFA2 Time (ms)"
 echo "($(paste -sd + wfa2Results.txt)) * 1000 /$NUM_ITERS" | bc -l
+#uncomment to run tsunami for 130K, but it will likely run out of memory
 #echo "TSUNAMI PACT GPU Time (ms)"
 #echo "($(paste -sd + tsunamiResults.txt)) * 1000/$NUM_ITERS" | bc -l

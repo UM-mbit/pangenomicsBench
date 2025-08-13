@@ -3,7 +3,11 @@ This contains two projects:
 2. TSUNAMI: Improved GPU implementation of WFA
 
 # Building
-TODO
+1. build TSUNAMI. REQUIRES Cuda >= 11.8:
+   `cd deps/TSUNAMI_PACT && make -j && cd ../..`
+2. build wfa2:
+   `cd deps/WFA2-lib && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --verbose -j && cd ../..`
+
 # Evaluation
 ## Full Runs (quickstart)
 We include two scripts to run for all datasets used in the paper.
