@@ -5,3 +5,5 @@
 pgsgd/data
 **/tags
 *.lay
+*.ncu-rep
+Pgsgd_gpu/*.log
