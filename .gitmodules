@@ -35,3 +35,9 @@
 [submodule "Pgsgd_gpu/odgi"]
 	path = Pgsgd_gpu/odgi
 	url = git@github.com:pangenome/odgi.git
+[submodule "TSUNAMI_PACT"]
+	path = GpuWfa/deps/TSUNAMI_PACT
+	url = git@github.com:giuliagerometta/TSUNAMI_PACT.git
+[submodule "WFA2-lib"]
+	path = GpuWfa/deps/WFA2-lib
+	url = git@github.com:smarco/WFA2-lib.git

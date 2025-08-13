@@ -39,8 +39,21 @@ cd Gwfa
 make -j || GWFA_BUILD_FAILED=1
 cd ..
 
-echo "0 means built with no error. 1 means built failed
+GPU_WFA_BUILD_FAILED=0
+cd GpuWfa
+#build TSUNAMI
+cd deps/TSUNAMI_PACT 
+make -j || GPU_WFA_BUILD_FAILED=1
+cd ../..
+#build WFA2-lib
+cd deps/WFA2-lib 
+cmake -S . -B build -DOPENMP=TRUE -DCMAKE_BUILD_TYPE=Release || GPU_WFA_BUILD_FAILED=1
+cmake --build build --verbose -j || GPU_WFA_BUILD_FAILED=1
+cd ../..
+
+echo "0 means built with no error. 1 means built failed"
 echo "GBV_BUILD_STATUS=$GBV_BUILD_FAILED"
 echo "GBWT_BUILD_STATUS=$GBWT_BUILD_FAILED"
 echo "GSSW_BUILD_STATUS=$GSSW_BUILD_FAILED"
 echo "GWFA_BUILD_STATUS=$GWFA_BUILD_FAILED"
+echo "GPU_WFA_BUILD_STATUS=$GPU_WFA_BUILD_FAILED"
