@@ -73,4 +73,4 @@ $(BIN_DIR)/$(EXE).prof: $(OBJ_FILES_PROF)
 clean:
 	rm -f $(BIN_DIR)/$(EXE)
 	rm -f $(OBJ_DIR)/*.o
-	#cd deps/vg && make clean
+	cd deps/vg && make clean
