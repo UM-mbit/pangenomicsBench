@@ -1,7 +1,6 @@
-This contains three projects:
+This contains two projects:
 1. WFA2: leading CPU implementation of WFA library
-2. WFA-GPU: GPU implemenation of WFA from BSC
-3. TSUNAMI: Improved GPU implementation of WFA
+2. TSUNAMI: Improved GPU implementation of WFA
 
 # Building
 TODO

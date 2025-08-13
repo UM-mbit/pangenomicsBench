@@ -38,6 +38,3 @@
 [submodule "WFA2-lib"]
 	path = GpuWfa/deps/WFA2-lib
 	url = git@github.com:smarco/WFA2-lib.git
-[submodule "WFA-GPU"]
-	path = GpuWfa/deps/WFA-GPU
-	url = git@github.com:quim0/WFA-GPU.git
