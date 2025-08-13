@@ -4,9 +4,10 @@ GBV_BUILD_FAILED=0
 cd Gbv/deps/GraphAligner
 conda env create -f CondaEnvironment_linux.yml
 conda activate GraphAligner || GBV_BUILD_FAILED=1
+cd ../..
 make -j || GBV_BUILD_FAILED=1
 conda deactivate
-cd ../../..
+cd ..
 
 GBWT_BUILD_FAILED=0
 cd Gbwt
@@ -26,7 +27,7 @@ cd ..
 GSSW_BUILD_FAILED=0
 cd Gssw
 conda create -n vgPgBench python=3.8 -y
-conda activate vgBench || GSSW_BUILD_FAILED=1
+conda activate vgPgBench || GSSW_BUILD_FAILED=1
 cd deps/Gssw
 make -j || GSSW_BUILD_FAILED=1
 cd ../..
@@ -43,7 +44,7 @@ GPU_WFA_BUILD_FAILED=0
 cd GpuWfa
 #build TSUNAMI
 cd deps/TSUNAMI_PACT 
-make -j || GPU_WFA_BUILD_FAILED=1
+make all || GPU_WFA_BUILD_FAILED=1
 cd ../..
 #build WFA2-lib
 cd deps/WFA2-lib 
