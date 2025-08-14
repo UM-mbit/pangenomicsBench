@@ -53,9 +53,29 @@ cmake -S . -B build -DOPENMP=TRUE -DCMAKE_BUILD_TYPE=Release || GPU_WFA_BUILD_FA
 cmake --build build --verbose -j || GPU_WFA_BUILD_FAILED=1
 cd ../..
 
+TC_BUILD_FAILED=0
+
+
+PGSGD_BUILD_FAILED=0
+cd Pgsgd/deps/odgi
+cmake -S . -B build
+cmake --build build -- -j 10 || PGSGD_BUILD_FAILED=1
+cd ../..
+export LD_LIBRARY_PATH=${PWD}/deps/odgi/lib:$LD_LIBRARY_PATH
+mkdir bin
+make -j || PGSGD_BUILD_FAILED=1
+
+
+PGSGD_GPU_BUILD_FAILED=0
+
+
+
 echo "0 means built with no error. 1 means built failed"
 echo "GBV_BUILD_STATUS=$GBV_BUILD_FAILED"
 echo "GBWT_BUILD_STATUS=$GBWT_BUILD_FAILED"
 echo "GSSW_BUILD_STATUS=$GSSW_BUILD_FAILED"
 echo "GWFA_BUILD_STATUS=$GWFA_BUILD_FAILED"
 echo "GPU_WFA_BUILD_STATUS=$GPU_WFA_BUILD_FAILED"
+echo "TC_BUILD_STATUS=$TC_BUILD_FAILED"
+echo "PGSGD_BUILD_STATUS=$PGSGD_BUILD_FAILED"
+echo "PGSGD_GPU_BUILD_STATUS=$PGSGD_GPU_BUILD_FAILED"
