@@ -97,3 +97,5 @@ if RUN_PIN:
         processes.append(p)
     for p in processes:
         p.join()
+
+os.system("bash checkAllRuns.sh AllRunsOut")
