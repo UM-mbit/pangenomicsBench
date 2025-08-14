@@ -11,9 +11,10 @@ It includes the following kernels:
 ## Setup
 1. Clone the repository and all submodules with 
    `git clone --recursive git@github.com:UM-mbit/pangenomicsBench.git`
-2. Install the profiling tools. Needed for profiling analysis.
+2. Install the profiling tools. Needed for profiling analysis. 
    `cd ProfileScripts && bash build.sh && cd ..`
-3. Download the datasets. TODO
+3. Download the datasets. 
+   `wget https://genomicsbench.eecs.umich.edu/Kernels.tar.gz && tar -xvzf Kernels.tar.gz`
 4. Set local environment variables:
    + `VTUNE_HOME` - Path to the VTune installation directory. e.g.
      `/opt/intel/oneapi/vtune/latest`
@@ -22,14 +23,42 @@ It includes the following kernels:
    kernels at the end of the script. If a kernel fails
    enter individual kernel directories, read the README, and attempt manual
    build. Note, the compiler used in our paper is specified in the Makefile.
-   Others may be used, but are untested.
+   Others may be used, but are untested. build.sh is tested with zsh and bash. 
+   Conda must be initialized for the shell you run it with.
    `bash build.sh`
-6. Run the kernels with the run script.
+6. Run the CPU kernels with the run script.
    `python mainRun.py`
    By default the script will run the kernels once with timing collection.
    To run with other profiling options read the header comment of `mainRun.py`
+   This will produce `AllRunsOut` which includes all of the output data. The
+   directory structure is shown below:
+   ```
+       AllRunsOut
+    ├── <KernelName>
+    │   ├── KernelOuts //contains outputs of the kernel
+    │   ├── Logs //contains logs of each analysis run e.g. vanillaApp.log
+    │   │   ├── vanillaApp.log
+    │   │   └── ...
+    │   ├── Profiles //contains vtune profiles if they were collected
+    │   │   ├── ...
+    │   ├── Reports //contains reports from the vtune profiles
+    │   │   ├── ...
+    │   └── Results //contains summarized results from the analyses runs
+    │       ├── vanillaRunTimes.txt
+    │       └── ...
+    └── <KernelName2>
+        ...
+    ```
+
    Kernels can also be run individually. Usually as:
    `./bin/kernel.prof <path to input> [optional: numIterations]`
    numIterations can be used to stop after `n` inputs to control the duration
    without modifying the dataset.
    See the README for each kernel for more information.
+7. Running GPU kernels:  
+   Timing analysis can be run with `runGpu.sh`. Tsunami results will be written 
+   to `tsunamiTiming.txt` and PGSGD results will be written to TODO
+
+   More detailed instructions for running the gpu kernels, as well as
+   information for running the NCU profiling can be found in the GPU kernel
+   directories.

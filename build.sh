@@ -1,4 +1,5 @@
-export VTUNE_HOME=/opt/intel/oneapi/vtune/latest
+#redefine to default if not set
+export VTUNE_HOME=${VTUNE_HOME:="/opt/intel/oneapi/vtune/latest"}
 
 GBV_BUILD_FAILED=0
 cd Gbv/deps/GraphAligner

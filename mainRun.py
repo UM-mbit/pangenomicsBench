@@ -26,8 +26,8 @@ Set these to true to run the corresponding analysis. Uarch and Cache run the
 application once each, so enabling both triples execution time.
 PIN can increase runtime by a larger factor.
 '''
-RUN_VANILLA = False
-RUN_UARCH = True
+RUN_VANILLA = True
+RUN_UARCH = False
 RUN_CACHE = False
 RUN_PIN = False
 
