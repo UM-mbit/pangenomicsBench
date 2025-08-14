@@ -31,9 +31,9 @@ $(OBJ_DIR):
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-#TODO will not build if you don't have conda py38 environment
+#requires that py38 is activte
 $(DEP_SRC_DIR)/vg.pb.h:
-	cd deps/vg && /home/kaplannp/miniconda3/bin/activate py38 && . ./source_me.sh && make -j
+	cd deps/vg && . ./source_me.sh && make -j
 
 
 #BEGIN SINGLE THREADED REGION 
