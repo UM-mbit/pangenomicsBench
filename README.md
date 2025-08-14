@@ -9,24 +9,25 @@ It includes the following kernels:
 | GWFA        | Minigraph     | 2D dynamic programming. Alignment | Used in Minigraph for alignment and graph building. Although GWFA is used in the chaining step to link seed anchors, computationally, it resembles a dynamic
 
 ## Setup
-1. Clone the repository and all submodules with 
+1. Please ensure all [dependencies](Dependencies) are met.
+2. Clone the repository and all submodules with 
    `git clone --recursive git@github.com:UM-mbit/pangenomicsBench.git`
-2. Install the profiling tools. Needed for profiling analysis. 
+3. Install the profiling tools. Needed for profiling analysis. 
    `cd ProfileScripts && bash build.sh && cd ..`
-3. Download the datasets. 
+4. Download the datasets. 
    `wget https://genomicsbench.eecs.umich.edu/Kernels.tar.gz && tar -xvzf Kernels.tar.gz`
-4. Set local environment variables:
+5. Set local environment variables:
    + `VTUNE_HOME` - Path to the VTune installation directory. e.g.
      `/opt/intel/oneapi/vtune/latest`
    + `KERNEL_DATA` - Path to the dataset directory (called Kernels)
-5. Build the kernels by running the build script. It will print build status of
+6. Build the kernels by running the build script. It will print build status of
    kernels at the end of the script. If a kernel fails
    enter individual kernel directories, read the README, and attempt manual
    build. Note, the compiler used in our paper is specified in the Makefile.
    Others may be used, but are untested. build.sh is tested with zsh and bash. 
    Conda must be initialized for the shell you run it with.
    `bash build.sh`
-6. Run the CPU kernels with the run script.
+7. Run the CPU kernels with the run script.
    `python mainRun.py`
    By default the script will run the kernels once with timing collection.
    To run with other profiling options read the header comment of `mainRun.py`
@@ -59,10 +60,30 @@ It includes the following kernels:
    numIterations can be used to stop after `n` inputs to control the duration
    without modifying the dataset.
    See the README for each kernel for more information.
-7. Running GPU kernels:  
+8. Running GPU kernels:  
    Timing analysis can be run with `runGpu.sh`. Tsunami results will be written 
    to `tsunamiTiming.txt` and PGSGD results will be written to TODO
 
    More detailed instructions for running the gpu kernels, as well as
    information for running the NCU profiling can be found in the GPU kernel
    directories.
+## Dependencies
+### To build CPU kernels
+- conda (tested with 24.7.1). Must be initialized for the shell you are running.
+  e.g. run `conda init bash`
+- cmake (tested with 3.26.0)
+- gcc/g++ (We use gcc 9, 11, and 13). Any one of these should compile, but we
+  used the following for the results in the paper:
+    - GSSW uses gcc 11  
+    - GBV use gcc 13  
+    - GBWT uses gcc 9  
+    - GWFA uses gcc 11  
+    - GpuWfa uses gcc 13  
+    - TODO Niklas, can you fill in your kernels?)
+- Dependencies for specific tool dependencies are enumerated in the readmes for
+  their submodules.
+### For CPU profiling
+- Intel VTune Profiler (tested with 2025.1.0)
+### For GPU code
+- Cuda (tested with 12.4)
+- NCU (tested with 2024.1.0)
