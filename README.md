@@ -26,6 +26,14 @@ It includes the following kernels:
    + `VTUNE_HOME` - Path to the VTune installation directory. e.g.
      `/opt/intel/oneapi/vtune/latest`
    + `KERNEL_DATA` - Path to the dataset directory (called Kernels)
+6. Ensure cmake can locate your CUDA installation (for PGSGD-GPU). Potentially,
+   you might need to set the environment variable `CUDA_HOME` and update your `PATH`
+   and `LD_LIBRARY_PATH` similar to this:
+   ```
+   export CUDA_HOME=/usr/local/cuda
+   export PATH=$CUDA_HOME/bin:$PATH
+   export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
+   ```
 6. Build the kernels by running the build script. It will print build status of
    kernels at the end of the script. If a kernel fails
    enter individual kernel directories, read the README, and attempt manual
@@ -85,7 +93,9 @@ It includes the following kernels:
     - GBWT uses gcc 9  
     - GWFA uses gcc 11  
     - GpuWfa uses gcc 13  
-    - TODO Niklas, can you fill in your kernels?)
+    - TC uses gcc 11
+    - PGSGD uses gcc 11
+    - PGSGD uses gcc 11 and CUDA 12.4
 - Dependencies for specific tool dependencies are enumerated in the readmes for
   their submodules.
 ### For CPU profiling
