@@ -75,9 +75,9 @@ cd ..
 
 PGSGD_GPU_BUILD_FAILED=0
 cd Pgsgd_gpu/odgi
-export CUDA_HOME=/usr/local/cuda-12.4
-export PATH=/usr/local/cuda-12.4/bin/:$PATH
-export LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:$LD_LIBRARY_PATH
+#export CUDA_HOME=/usr/local/cuda-12.4
+#export PATH=/usr/local/cuda-12.4/bin/:$PATH
+#export LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:$LD_LIBRARY_PATH
 cmake -DUSE_GPU=ON -S. -Bbuild
 cmake --build build -- -j || PGSGD_GPU_BUILD_FAILED=1
 cd ../..
