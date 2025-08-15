@@ -6,7 +6,10 @@ It includes the following kernels:
 | GSSW        | Vg Map        | 2D dynamic programming. Alignment | Farrar's style SIMD parallelization with POA-style lookups to handle the graph                |
 | GBV         | GraphAlginer  | 2D dynamic programming. Alignment | Myers bitvector extended to graph. Uses a priority queue to order computations, allowing alignment to cyclic graphs |
 | GBWT        | Vg Giraffe    | Table lookups. Indexing | GBWT index find query. Used to extend clustered seed hits in Giraffe.                        |
-| GWFA        | Minigraph     | 2D dynamic programming. Alignment | Used in Minigraph for alignment and graph building. Although GWFA is used in the chaining step to link seed anchors, computationally, it resembles a dynamic
+| GWFA        | Minigraph     | 2D dynamic programming. Alignment | Used in Minigraph for alignment and graph building. Although GWFA is used in the chaining step to link seed anchors, computationally, it resembles a dynamic |
+| TC          | Seqwish       | Union-find, sorting. Pangenome Graph Building | Used in Seqwish to construct pangenome graph nodes from all-to-all alignments |
+| PGSGD       | Odgi layout   | Path-Guided Stochastic Gradient Descent. Layout generation | Utilizes PGSGD to compute 2D layouts of pangenome graphs from either PGGB or minigraph-cactus flow |
+| PGSGD-GPU   | Odgi layout   | Path-Guided Stochastic Gradient Descent. Layout generation | Utilizes PGSGD to compute 2D layouts of pangenome graphs from either PGGB or minigraph-cactus flow. GPU accelerated |
 
 ## Setup
 1. Please ensure all [dependencies](Dependencies) are met.
