@@ -54,6 +54,13 @@ cmake --build build --verbose -j || GPU_WFA_BUILD_FAILED=1
 cd ../..
 
 TC_BUILD_FAILED=0
+cd Tc/deps/seqwish
+cmake -S . -B build
+cmake --build build -- -j || TC_BUILD_FAILED=1
+cd ../..
+export LD_LIBRARY_PATH=${PWD}/deps/seqwish/lib:$LD_LIBRARY_PATH
+mkdir bin
+make -j || TC_BUILD_FAILED=1
 
 
 PGSGD_BUILD_FAILED=0
