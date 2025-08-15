@@ -12,7 +12,10 @@ It includes the following kernels:
 | PGSGD-GPU   | Odgi layout   | Path-Guided Stochastic Gradient Descent. Layout generation | Utilizes PGSGD to compute 2D layouts of pangenome graphs from either PGGB or minigraph-cactus flow. GPU accelerated |
 
 ## Setup
-1. Please ensure all [dependencies](Dependencies) are met.
+1. Please ensure all [dependencies](Dependencies) are met. 
+   For GSSW, which depends on vg, please `cd Gssw/deps/vg` and then follow the
+   instructions in the [vg README](Gssw/deps/vg/README.md) to install those
+   dependencies. (`make get-deps` will work for Ubuntu)
 2. Clone the repository and all submodules with 
    `git clone --recursive git@github.com:UM-mbit/pangenomicsBench.git`
 3. Install the profiling tools. Needed for profiling analysis. 
@@ -29,7 +32,7 @@ It includes the following kernels:
    build. Note, the compiler used in our paper is specified in the Makefile.
    Others may be used, but are untested. build.sh is tested with zsh and bash. 
    Conda must be initialized for the shell you run it with.
-   `bash build.sh`
+   `source build.sh`
 7. Run the CPU kernels with the run script.
    `python mainRun.py`
    By default the script will run the kernels once with timing collection.
