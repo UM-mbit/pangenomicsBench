@@ -12,7 +12,7 @@ It includes the following kernels:
 | PGSGD-GPU   | Odgi layout   | Path-Guided Stochastic Gradient Descent. Layout generation | Utilizes PGSGD to compute 2D layouts of pangenome graphs from either PGGB or minigraph-cactus flow. GPU accelerated |
 
 ## Setup
-1. Please ensure all [dependencies](Dependencies) are met. 
+1. Please ensure all [dependencies](#dependencies) are met.
    For GSSW, which depends on vg, please `cd Gssw/deps/vg` and then follow the
    instructions in the [vg README](Gssw/deps/vg/README.md) to install those
    dependencies. (`make get-deps` will work for Ubuntu)
