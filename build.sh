@@ -66,7 +66,7 @@ cd ..
 PGSGD_BUILD_FAILED=0
 cd Pgsgd/deps/odgi
 cmake -S . -B build
-cmake --build build -- -j 10 || PGSGD_BUILD_FAILED=1
+cmake --build build -- -j || PGSGD_BUILD_FAILED=1
 cd ../..
 export LD_LIBRARY_PATH=${PWD}/deps/odgi/lib:$LD_LIBRARY_PATH
 mkdir bin
