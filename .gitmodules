@@ -41,3 +41,16 @@
 [submodule "WFA2-lib"]
 	path = GpuWfa/deps/WFA2-lib
 	url = git@github.com:smarco/WFA2-lib.git
+[submodule "ToolAnalysis/Code/GraphAligner"]
+	path = ToolAnalysis/Code/GraphAligner
+	url = git@github.com:maickrau/GraphAligner.git
+[submodule "ToolAnalysis/Code/minigraph"]
+	path = ToolAnalysis/Code/minigraph
+	url = git@github.com:lh3/minigraph.git
+[submodule "ToolAnalysis/Code/odgi"]
+	path = ToolAnalysis/Code/odgi
+	url = git@github.com:nsmlzl/odgi.git
+	branch = benchmark_v0
+[submodule "ToolAnalysis/Code/vg"]
+	path = ToolAnalysis/Code/vg
+	url = git@github.com:vgteam/vg.git
