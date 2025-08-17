@@ -82,6 +82,7 @@ It includes the following kernels:
    information for running the NCU profiling can be found in the GPU kernel
    directories.
 ## Dependencies
+All experiments are run on a linux system (Tested for Ubuntu 24.04, and 22.04).
 ### To build CPU kernels
 - conda (tested with 24.7.1). Must be initialized for the shell you are running.
   e.g. run `conda init bash`

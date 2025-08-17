@@ -54,3 +54,6 @@
 [submodule "ToolAnalysis/Code/vg"]
 	path = ToolAnalysis/Code/vg
 	url = git@github.com:vgteam/vg.git
+[submodule "ToolAnalysis/Code/seqwish"]
+	path = ToolAnalysis/Code/seqwish
+	url = https://github.com/nsmlzl/seqwish.git

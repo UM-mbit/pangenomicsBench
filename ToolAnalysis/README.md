@@ -1,9 +1,4 @@
-TODO
-+ must add submodules for each of the programs to the code directory
-+ Will need to duplicate this for grph building pipelines
-
-
-STEPS
+## STEPS
 1. Tool analysis is run on the unmodified tools (except for a small change to
    PGSGD). These can be found in the
    Code directory. These have documentation on their respective githubs and in 
@@ -13,7 +8,7 @@ STEPS
    `conda with conda install -c bioconda -c conda-forge pggb`
 2. Download the data from our server into this directory and extract it to Data/
    using the commands:
-   `wget TODO && tar -xzvf Data.tar.gz`
+   `wget https://genomicsbench.eecs.umich.edu/ToolDataPangenomicsBench.tar.gz && tar -xvzf ToolDataPangenomicsBench.tar.gz`
 3. Install Vtune if not already present on the system. Docs to install vtune are 
    found [here](https://www.intel.com/content/www/us/en/docs/vtune-profiler/installation-guide/2023-1/overview.html).
    the `vtune` executable 
@@ -36,3 +31,6 @@ STEPS
    `bash runScaling.sh`.
    This will produce logs in the ThreadScaling/Logs directory and timing results
    in ThreadScaling/Timing
+   TODO @ niklas, could you make sure we have the right odgi code in Code
+   directory for the thread scaling, and also check that seqwish is the correct
+   branch/submodule?
