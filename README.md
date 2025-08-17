@@ -6,10 +6,13 @@ It includes the following kernels:
 | GSSW        | Vg Map        | 2D dynamic programming. Alignment | Farrar's style SIMD parallelization with POA-style lookups to handle the graph                |
 | GBV         | GraphAlginer  | 2D dynamic programming. Alignment | Myers bitvector extended to graph. Uses a priority queue to order computations, allowing alignment to cyclic graphs |
 | GBWT        | Vg Giraffe    | Table lookups. Indexing | GBWT index find query. Used to extend clustered seed hits in Giraffe.                        |
-| GWFA        | Minigraph     | 2D dynamic programming. Alignment | Used in Minigraph for alignment and graph building. Although GWFA is used in the chaining step to link seed anchors, computationally, it resembles a dynamic
+| GWFA        | Minigraph     | 2D dynamic programming. Alignment | Used in Minigraph for alignment and graph building. Although GWFA is used in the chaining step to link seed anchors, computationally, it resembles a dynamic |
+| TC          | Seqwish       | Union-find, sorting. Pangenome Graph Building | Used in Seqwish to construct pangenome graph nodes from all-to-all alignments |
+| PGSGD       | Odgi layout   | Path-Guided Stochastic Gradient Descent. Layout generation | Utilizes PGSGD to compute 2D layouts of pangenome graphs from either PGGB or minigraph-cactus flow |
+| PGSGD-GPU   | Odgi layout   | Path-Guided Stochastic Gradient Descent. Layout generation | Utilizes PGSGD to compute 2D layouts of pangenome graphs from either PGGB or minigraph-cactus flow. GPU accelerated |
 
 ## Setup
-1. Please ensure all [dependencies](Dependencies) are met. 
+1. Please ensure all [dependencies](#dependencies) are met.
    For GSSW, which depends on vg, please `cd Gssw/deps/vg` and then follow the
    instructions in the [vg README](Gssw/deps/vg/README.md) to install those
    dependencies. (`make get-deps` will work for Ubuntu)
@@ -23,6 +26,14 @@ It includes the following kernels:
    + `VTUNE_HOME` - Path to the VTune installation directory. e.g.
      `/opt/intel/oneapi/vtune/latest`
    + `KERNEL_DATA` - Path to the dataset directory (called Kernels)
+6. Ensure cmake can locate your CUDA installation (for PGSGD-GPU). Potentially,
+   you might need to set the environment variable `CUDA_HOME` and update your `PATH`
+   and `LD_LIBRARY_PATH` similar to this:
+   ```
+   export CUDA_HOME=/usr/local/cuda
+   export PATH=$CUDA_HOME/bin:$PATH
+   export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
+   ```
 6. Build the kernels by running the build script. It will print build status of
    kernels at the end of the script. If a kernel fails
    enter individual kernel directories, read the README, and attempt manual
@@ -82,7 +93,9 @@ It includes the following kernels:
     - GBWT uses gcc 9  
     - GWFA uses gcc 11  
     - GpuWfa uses gcc 13  
-    - TODO Niklas, can you fill in your kernels?)
+    - TC uses gcc 11
+    - PGSGD uses gcc 11
+    - PGSGD uses gcc 11 and CUDA 12.4
 - Dependencies for specific tool dependencies are enumerated in the readmes for
   their submodules.
 ### For CPU profiling

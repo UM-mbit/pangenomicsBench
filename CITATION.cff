@@ -7,6 +7,7 @@ authors:
     orcid: 0000-0002-5299-5869
   - family-names: "Schmelzle"
     given-names: "Jan-Niklas"
+    orcid: 0000-0001-8566-4049
 version: 0.0.1
 abstract: "PangenomicsBench is a benchmark suite for pangenomics algorithms"
 date-released: "2024-11-26"

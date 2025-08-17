@@ -30,6 +30,7 @@ LD_LIB_DIR_FLAGS := \
 	-fopenmp \
 	-pthread \
 	-L$(PROF_UTILS)/lib \
+	-L/usr/lib/x86_64-linux-gnu \
 	-L$(VTUNE_HOME)/lib64
 LD_LIB_FLAGS := \
 	-lseqwish \
