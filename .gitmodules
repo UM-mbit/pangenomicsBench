@@ -57,3 +57,6 @@
 [submodule "ToolAnalysis/Code/seqwish"]
 	path = ToolAnalysis/Code/seqwish
 	url = https://github.com/nsmlzl/seqwish.git
+[submodule "ToolAnalysis/Code/cactus"]
+	path = ToolAnalysis/Code/cactus
+	url = git@github.com:ComparativeGenomicsToolkit/cactus.git
