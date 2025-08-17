@@ -11,7 +11,7 @@ It includes the following kernels:
 | PGSGD       | Odgi layout   | Path-Guided Stochastic Gradient Descent. Layout generation | Utilizes PGSGD to compute 2D layouts of pangenome graphs from either PGGB or minigraph-cactus flow |
 | PGSGD-GPU   | Odgi layout   | Path-Guided Stochastic Gradient Descent. Layout generation | Utilizes PGSGD to compute 2D layouts of pangenome graphs from either PGGB or minigraph-cactus flow. GPU accelerated |
 
-## Setup
+## Running the Benchmarks
 1. Please ensure all [dependencies](#dependencies) are met.
    For GSSW, which depends on vg, please `cd Gssw/deps/vg` and then follow the
    instructions in the [vg README](Gssw/deps/vg/README.md) to install those
@@ -81,6 +81,8 @@ It includes the following kernels:
    More detailed instructions for running the gpu kernels, as well as
    information for running the NCU profiling can be found in the GPU kernel
    directories.
+## Running the tools
+Please see the README.md in the `ToolAnalysis` subdirectory.
 ## Dependencies
 All experiments are run on a linux system (Tested for Ubuntu 24.04, and 22.04).
 ### To build CPU kernels
