@@ -9,3 +9,8 @@
 * Run profiling:
   * Set environment variable `KERNEL_DATA` accordingly.
   * Run profiling script `pgsgd_gpu_profiling.sh`: `$ bash pgsgd_gpu_profiling.sh`
+  * Extract profiling data by running `python analyze_profile_results.py`. The
+    numpy package is needed. Furthermore, the ncu-report package is required;
+    you might need to modify your PYTHONPATH (`export PYTHONPATH="$CUDA_HOME/nsight-compute-2024.1.0/extras/python:$PYTHONPATH"`).
+    PGSGD-GPUs profiling results from Table 6 are reported as "Global". The other metrics discussed in the paper can be extracted
+    by opening `profile_results.ncu-rep` with nsight-compute.

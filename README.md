@@ -34,6 +34,11 @@ It includes the following kernels:
    export PATH=$CUDA_HOME/bin:$PATH
    export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
    ```
+   Also check that you can import the `ncu_report` python package from nsight-compute.
+   Yout might need to modify your PYTHONPATH environment:
+   ```
+   export PYTHONPATH="$CUDA_HOME/nsight-compute-2024.1.0/extras/python:$PYTHONPATH"
+   ```
 6. Build the kernels by running the build script. It will print build status of
    kernels at the end of the script. If a kernel fails
    enter individual kernel directories, read the README, and attempt manual
@@ -76,7 +81,7 @@ It includes the following kernels:
    See the README for each kernel for more information.
 8. Running GPU kernels:  
    Timing analysis can be run with `runGpu.sh`. Tsunami results will be written 
-   to `tsunamiTiming.txt` and PGSGD results will be written to TODO
+   to `tsunamiTiming.txt` and PGSGD results will be written to `PGSGDGPUProfiling.txt` (@niklas).
 
    More detailed instructions for running the gpu kernels, as well as
    information for running the NCU profiling can be found in the GPU kernel
@@ -106,3 +111,4 @@ All experiments are run on a linux system (Tested for Ubuntu 24.04, and 22.04).
 ### For GPU code
 - Cuda (tested with 12.4)
 - NCU (tested with 2024.1.0)
+- Python with numpy package and ncu-report (from nsight-compute installation).

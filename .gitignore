@@ -6,4 +6,5 @@ pgsgd/data
 **/tags
 *.lay
 *.ncu-rep
+PGSGDGPUProfiling.txt
 Pgsgd_gpu/*.log
