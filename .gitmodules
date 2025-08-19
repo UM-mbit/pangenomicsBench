@@ -32,8 +32,8 @@
 [submodule "Gssw/deps/Gssw"]
 	path = Gssw/deps/Gssw
 	url = git@github.com:kaplannp/gssw.git
-[submodule "Pgsgd_gpu/odgi"]
-	path = Pgsgd_gpu/odgi
+[submodule "Pgsgd_gpu/odgi_gpu"]
+	path = Pgsgd_gpu/deps/odgi_gpu
 	url = git@github.com:pangenome/odgi.git
 [submodule "TSUNAMI_PACT"]
 	path = GpuWfa/deps/TSUNAMI_PACT
@@ -60,3 +60,6 @@
 [submodule "ToolAnalysis/Code/cactus"]
 	path = ToolAnalysis/Code/cactus
 	url = git@github.com:ComparativeGenomicsToolkit/cactus.git
+[submodule "Pgsgd_gpu/deps/odgi_cpu"]
+	path = Pgsgd_gpu/deps/odgi_cpu
+	url = https://github.com/nsmlzl/odgi.git

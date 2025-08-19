@@ -74,13 +74,18 @@ make -j || PGSGD_BUILD_FAILED=1
 cd ..
 
 PGSGD_GPU_BUILD_FAILED=0
-cd Pgsgd_gpu/odgi
+# build GPU implementation
+cd Pgsgd_gpu/deps/odgi_gpu
 #export CUDA_HOME=/usr/local/cuda-12.4
 #export PATH=/usr/local/cuda-12.4/bin/:$PATH
 #export LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:$LD_LIBRARY_PATH
 cmake -DUSE_GPU=ON -S. -Bbuild
 cmake --build build -- -j || PGSGD_GPU_BUILD_FAILED=1
-cd ../..
+cd ../odgi_cpu
+# build CPU variant (for run time comparison)
+cmake -S. -Bbuild
+cmake --build build -- -j || PGSGD_GPU_BUILD_FAILED=1
+cd ../../..
 
 
 echo "0 means built with no error. 1 means built failed"
