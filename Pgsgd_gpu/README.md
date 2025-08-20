@@ -9,7 +9,7 @@ This directory contains two odgi projects:
 
 Building both projects requires odgi's dependencies ([see](https://github.com/pangenome/odgi/tree/be6a0202501d7ea2ac57f9ad89d4d10ed5dbd7c6?tab=readme-ov-file#building-from-source)).
 Furthermore, CUDA and NVIDIA nsight compute are required on the test machine.
-Lastly, the analysis requires a python environment with numpy and the python tools from nsight compute (see [#profiling]).
+Lastly, the analysis requires a python environment with numpy and the python tools from nsight compute (see [profiling section](#profiling)).
 
 
 ## Build instructions for `deps/odgi_gpu`
