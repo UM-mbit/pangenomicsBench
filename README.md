@@ -79,13 +79,13 @@ It includes the following kernels:
    numIterations can be used to stop after `n` inputs to control the duration
    without modifying the dataset.
    See the README for each kernel for more information.
-8. Running GPU kernels:  
-   Timing analysis can be run with `runGpu.sh`. Tsunami results will be written 
-   to `tsunamiTiming.txt` and PGSGD results will be written to `PGSGDGPUProfiling.txt` (@niklas).
-
+8. Run profiling of GPU tools with `bash runGpu.sh`.  This runs the timing
+   analysis of Tsunami and writes them to `tsunamiTiming.txt`. Furthermore, it
+   runs both timing and microarchitecture analysis for PGSGD-GPU and stores
+   them to `PGSGDGPUProfiling.txt`. 
    More detailed instructions for running the gpu kernels, as well as
-   information for running the NCU profiling can be found in the GPU kernel
-   directories.
+   information for running the NCU profiling of Tsunami can be found in the GPU
+   kernel directories.
 ## Running the tools
 Please see the README.md in the `ToolAnalysis` subdirectory.
 ## Dependencies
