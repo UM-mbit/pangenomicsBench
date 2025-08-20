@@ -82,7 +82,8 @@ It includes the following kernels:
 8. Run profiling of GPU tools with `bash runGpu.sh`.  This runs the timing
    analysis of Tsunami and writes them to `tsunamiTiming.txt`. Furthermore, it
    runs both timing and microarchitecture analysis for PGSGD-GPU and stores
-   them to `PGSGDGPUProfiling.txt`. 
+   them to `PGSGDGPUProfiling.txt`.
+
    More detailed instructions for running the gpu kernels, as well as
    information for running the NCU profiling of Tsunami can be found in the GPU
    kernel directories.
