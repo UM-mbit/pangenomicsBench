@@ -5,5 +5,5 @@ cd ..
 
 # Run PGSGD-GPU profiling
 cd Pgsgd_gpu
-bash pgsgd_gpu_profiling.sh && python analyze_profile_results.py | tee ../PGSGDGPUProfiling.txt
+(bash pgsgd_gpu_profiling.sh && python analyze_profile_results.py) 2>&1 | tee ../PGSGDGPUProfiling.txt
 cd ..
