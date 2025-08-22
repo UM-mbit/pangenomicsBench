@@ -18,12 +18,12 @@ popd
 # Run tools
 
 ## PGGB
-`pggb -i ../../Data/PggbData/chr20.pan.fasta -o out -t 56 -p 99.95 -s 10000 -A 2>&1 | tee out_pggb.log`
+`pggb -i ../../Data/PggbData/chr20.pan.fasta -o out -t 28 -p 99.95 -s 10000 -A 2>&1 | tee out_pggb.log`
 
 ## odgi
 ```
-(/usr/bin/time -v ../../Code/odgi/bin/odgi build -g out/*smooth.final.gfa -o chr20.og -t 54 -P 2>&1 ) | tee out_odgi.log
-(/usr/bin/time -v ../../Code/odgi/bin/odgi layout -i chr20.og -o chr20.og.lay -T out/*.tsv -t 56 -P 2>&1 ) | tee -a out_odgi.log
+(/usr/bin/time -v ../../Code/odgi/bin/odgi build -g out/*smooth.final.gfa -o chr20.og -t 28 -P 2>&1 ) | tee out_odgi.log
+(/usr/bin/time -v ../../Code/odgi/bin/odgi layout -i chr20.og -o chr20.og.lay -T out/*.tsv -t 28 -P 2>&1 ) | tee -a out_odgi.log
 (/usr/bin/time -v ../../Code/odgi/bin/odgi draw -i chr20.og -c chr20.og.lay -p chr20.png -C 2>&1 ) | tee -a out_odgi.log
 ```
 
