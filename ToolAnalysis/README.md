@@ -1,4 +1,5 @@
-## STEPS
+# STEPS
+
 1. Tool analysis is run on the unmodified tools[^1]. These can be found in the
    `Code` directory. Each tool has documentation in its respective github
    repository and readme. Make sure to build from source and compile with debug
@@ -23,8 +24,8 @@
    `PipelineResults/Pggb` and `PipelineResults/MinigraphCactus`.
 5. To collect ThreadScaling run the thread scaling script
    `bash runScaling.sh`.
-   This will produce logs in the ThreadScaling/Logs directory and timing results
-   in ThreadScaling/Timing.
+   This will produce logs in the `ThreadScaling/Logs` directory and timing results
+   in `ThreadScaling/Timing`.
 
 
 [^1]: For odgi layout (PGSGD kernel) we use the cache-optimized implementation

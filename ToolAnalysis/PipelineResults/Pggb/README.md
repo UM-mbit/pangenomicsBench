@@ -1,6 +1,6 @@
 # Install instructions
 
-1. Create a conda environment and install PGGB into it:
+1. Create a conda environment and install PGGB into it (this automatically installs wfmash, seqwish, smoothXG):
 ```
 conda create --name pggb_env
 conda activate pggb_env
@@ -13,6 +13,7 @@ cmake -S . -B build
 cmake --build build -- -j
 popd
 ```
+
 
 # Run tools
 
@@ -27,15 +28,15 @@ popd
 ```
 
 # Timing data extraction
-The run times of wfmash, seqwish, and smoothXG are extracted from `out_pggb.log`. PGGB shows in its output (besides the output of the different tools) the run time of the specific tool after its completion.
+The run times of wfmash, seqwish, and smoothXG are extracted from `out_pggb.log`. PGGB shows in its output (besides the output of the different tools) the run times of the tools after their completion.
 Look for lines like this:
 ```
 ...
-wfmash -s 10000 -l 50000 -p 99.95 -n 1 -k 19 -H 0.001 -Y # -t 56 --tmp-base out ../../Data/PggbData/chr20.pan.fasta --lower-triangular --hg-filter-ani-diff 30 --approx-map
-910.98s user 9.28s system 1110% cpu 82.83s total 4771084Kb max memory
+wfmash -s 10000 -l 50000 -p 99.95 -n 1 -k 19 -H 0.001 -Y # -t 56 --tmp-base out ../../Data/PggbData/chr20.pan.fasta --lower-triangular --hg-filter-ani-diff 30 --approx-map  <- command with arguments
+910.98s user 9.28s system 1110% cpu 82.83s total 4771084Kb max memory                                                                                                        <- run time diagnostics
 ...
 ```
-First PGGB prints the exact command (here wfmash) with all its arguments it ran. In the second line it prints the run time diagnostics. The elapsed time is printed in seconds after "cpu" and before the memory information.
+First, PGGB prints the exact command (here wfmash) with all its arguments it ran. In the second line, it prints the run time diagnostics. The elapsed time is printed in seconds after "cpu" and before the memory information.
 PGGB runs wfmash in two sequential steps; their elapsed time need to be summed up. Afterwards it runs seqwish and smoothXG.
 
 The run time of odgi layout is recorded separately in `out_odgi.log`. The elapsed wall clock time needs to be summed up from all three substeps.
