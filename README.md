@@ -47,11 +47,11 @@ It includes the following kernels:
    Conda must be initialized for the shell you run it with.
    `source build.sh`
 6. Configure environment: `source env_setup.sh`
-7. Run the CPU kernels with the run script.
+7. Run the CPU kernels with the run script:
    `python mainRun.py`
-   By default the script will run the kernels once with timing collection.
-   To run with other profiling options read the header comment of `mainRun.py`
-   This will produce `AllRunsOut` which includes all of the output data. The
+   By default the script will run the kernels once with timing collection;
+   to run with other profiling options read the header comment of `mainRun.py`.
+   Profiling will produce the `AllRunsOut` directory which includes all of the output data. The
    directory structure is shown below:
    ```
        AllRunsOut
@@ -108,6 +108,7 @@ All experiments are run on a linux system (Tested for Ubuntu 24.04, and 22.04).
     - PGSGD uses gcc 11 and CUDA 12.4
 - Dependencies for specific tool dependencies are enumerated in the readmes for
   their submodules.
+- Python with pandas package.
 ### For CPU profiling
 - Intel VTune Profiler (tested with 2025.1.0)
 ### For GPU code
