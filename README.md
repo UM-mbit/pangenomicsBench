@@ -46,6 +46,7 @@ It includes the following kernels:
    Others may be used, but are untested. build.sh is tested with zsh and bash. 
    Conda must be initialized for the shell you run it with.
    `source build.sh`
+6. Configure environment: `source env_setup.sh`
 7. Run the CPU kernels with the run script.
    `python mainRun.py`
    By default the script will run the kernels once with timing collection.

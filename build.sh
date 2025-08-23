@@ -58,7 +58,7 @@ cd Tc/deps/seqwish
 cmake -S . -B build
 cmake --build build -- -j || TC_BUILD_FAILED=1
 cd ../..
-export LD_LIBRARY_PATH=${PWD}/deps/seqwish/lib:$LD_LIBRARY_PATH
+#export LD_LIBRARY_PATH=${PWD}/deps/seqwish/lib:$LD_LIBRARY_PATH
 mkdir bin
 make -j || TC_BUILD_FAILED=1
 cd ..
@@ -68,7 +68,7 @@ cd Pgsgd/deps/odgi
 cmake -S . -B build
 cmake --build build -- -j || PGSGD_BUILD_FAILED=1
 cd ../..
-export LD_LIBRARY_PATH=${PWD}/deps/odgi/lib:$LD_LIBRARY_PATH
+#export LD_LIBRARY_PATH=${PWD}/deps/odgi/lib:$LD_LIBRARY_PATH
 mkdir bin
 make -j || PGSGD_BUILD_FAILED=1
 cd ..
