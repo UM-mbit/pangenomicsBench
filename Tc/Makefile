@@ -3,7 +3,7 @@ VTUNE_HOME ?= /opt/intel/oneapi/vtune/latest
 SRC_DIR:=src
 BIN_DIR:=bin
 
-CXX ?= g++
+CXX ?= g++-11
 EXE:=transclosure
 
 PROF_UTILS=$(CWD)/../ProfileScripts/RoiCppHeaders
