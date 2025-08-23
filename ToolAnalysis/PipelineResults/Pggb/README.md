@@ -6,7 +6,7 @@ conda create --name pggb_env
 conda activate pggb_env
 conda install -c bioconda -c conda-forge pggb=0.7.2
 ```
-2. Build odgi `../../Code/odgi`
+2. Build odgi `../../Code/odgi` (deactivate pggb conda environment while building odgi, as this environment can lead to issues)
 ```
 pushd ../../Code/odgi
 cmake -S . -B build
