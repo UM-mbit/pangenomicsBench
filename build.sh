@@ -55,7 +55,7 @@ cd ../..
 
 TC_BUILD_FAILED=0
 cd Tc/deps/seqwish
-cmake -S . -B build
+CXX=g++-11 CC=gcc-11 cmake -S . -B build
 cmake --build build -- -j || TC_BUILD_FAILED=1
 cd ../..
 #export LD_LIBRARY_PATH=${PWD}/deps/seqwish/lib:$LD_LIBRARY_PATH
@@ -65,7 +65,7 @@ cd ..
 
 PGSGD_BUILD_FAILED=0
 cd Pgsgd/deps/odgi
-cmake -S . -B build
+CXX=g++-11 CC=gcc-11 cmake -S . -B build
 cmake --build build -- -j || PGSGD_BUILD_FAILED=1
 cd ../..
 #export LD_LIBRARY_PATH=${PWD}/deps/odgi/lib:$LD_LIBRARY_PATH
@@ -79,11 +79,11 @@ cd Pgsgd_gpu/deps/odgi_gpu
 #export CUDA_HOME=/usr/local/cuda-12.4
 #export PATH=/usr/local/cuda-12.4/bin/:$PATH
 #export LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:$LD_LIBRARY_PATH
-cmake -DUSE_GPU=ON -S. -Bbuild
+CXX=g++-11 CC=gcc-11 cmake -DUSE_GPU=ON -S. -Bbuild
 cmake --build build -- -j || PGSGD_GPU_BUILD_FAILED=1
 cd ../odgi_cpu
 # build CPU variant (for run time comparison)
-cmake -S. -Bbuild
+CXX=g++-11 CC=gcc-11 cmake -S. -Bbuild
 cmake --build build -- -j || PGSGD_GPU_BUILD_FAILED=1
 cd ../../..
 
