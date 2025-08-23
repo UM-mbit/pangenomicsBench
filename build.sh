@@ -51,7 +51,7 @@ cd ../..
 cd deps/WFA2-lib 
 cmake -S . -B build -DOPENMP=TRUE -DCMAKE_BUILD_TYPE=Release || GPU_WFA_BUILD_FAILED=1
 cmake --build build --verbose -j || GPU_WFA_BUILD_FAILED=1
-cd ../..
+cd ../../..
 
 TC_BUILD_FAILED=0
 cd Tc/deps/seqwish
