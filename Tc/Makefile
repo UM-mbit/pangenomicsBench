@@ -1,4 +1,4 @@
-VTUNE_HOME=/opt/intel/oneapi/vtune/latest
+VTUNE_HOME ?= /opt/intel/oneapi/vtune/latest
 
 SRC_DIR:=src
 BIN_DIR:=bin
