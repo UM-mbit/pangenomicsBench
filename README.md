@@ -108,9 +108,9 @@ All experiments are run on a linux system (Tested for Ubuntu 24.04, and 22.04).
     - PGSGD uses gcc 11 and CUDA 12.4
 - Dependencies for specific tool dependencies are enumerated in the readmes for
   their submodules.
-- Python with pandas package.
 ### For CPU profiling
 - Intel VTune Profiler (tested with 2025.1.0)
+- Python with pandas package.
 ### For GPU code
 - Cuda (tested with 12.4)
 - NCU (tested with 2024.1.0)
