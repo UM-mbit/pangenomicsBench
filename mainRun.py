@@ -88,10 +88,10 @@ if RUN_CACHE: gwfaRunnerLr.runVtuneCache("{}/Gwfa/bin/gwfa.prof $KERNEL_DATA/Gwf
 pinRuns.append(lambda:gwfaRunnerLr.runPinInstrCount("{}/Gwfa/bin/gwfa.prof $KERNEL_DATA/Gwfa/GwfaLr 1000".format(cwd)))
 
 tcRunner = Runner("AllRunsOut/Tc")
-if RUN_VANILLA : tcRunner.runVanillaApp("{}/Tc/bin/transclosure.prof 1 $KERNEL_DATA/Transclosure/chr20.pan.fasta $KERNEL_DATA/Transclosure/chr20.paf tmp.gfa".format(cwd))
-if RUN_UARCH: tcRunner.runVtuneUarch("{}/Tc/bin/transclosure.prof 1 $KERNEL_DATA/Transclosure/chr20.pan.fasta $KERNEL_DATA/Transclosure/chr20.paf tmp.gfa".format(cwd))
-if RUN_CACHE: tcRunner.runVtuneCache("{}/Tc/bin/transclosure.prof 1 $KERNEL_DATA/Transclosure/chr20.pan.fasta $KERNEL_DATA/Transclosure/chr20.paf tmp.gfa".format(cwd))
-pinRuns.append(lambda:tcRunner.runPinInstrCount("{}/Tc/bin/transclosure.prof 1 $KERNEL_DATA/Transclosure/cerevisiae.pan.fasta $KERNEL_DATA/Transclosure/cerevisiae.paf tmp.gfa".format(cwd)))
+if RUN_VANILLA : tcRunner.runVanillaApp("{}/Tc/bin/transclosure.prof 1 $KERNEL_DATA/Transclosure/Chr20/chr20.pan.fasta $KERNEL_DATA/Transclosure/Chr20/chr20.paf tmp.gfa".format(cwd))
+if RUN_UARCH: tcRunner.runVtuneUarch("{}/Tc/bin/transclosure.prof 1 $KERNEL_DATA/Transclosure/Chr20/chr20.pan.fasta $KERNEL_DATA/Transclosure/Chr20/chr20.paf tmp.gfa".format(cwd))
+if RUN_CACHE: tcRunner.runVtuneCache("{}/Tc/bin/transclosure.prof 1 $KERNEL_DATA/Transclosure/Chr20/chr20.pan.fasta $KERNEL_DATA/Transclosure/Chr20/chr20.paf tmp.gfa".format(cwd))
+pinRuns.append(lambda:tcRunner.runPinInstrCount("{}/Tc/bin/transclosure.prof 1 $KERNEL_DATA/Transclosure/Yeast/cerevisiae.pan.fasta $KERNEL_DATA/Transclosure/Yeast/cerevisiae.paf tmp.gfa".format(cwd)))
 
 pgsgdRunner = Runner("AllRunsOut/Pgsgd")
 if RUN_VANILLA : pgsgdRunner.runVanillaApp("{}/Pgsgd/bin/pgsgd.prof 1 $KERNEL_DATA/Pgsgd/chr20_smooth.og tmp.lay".format(cwd))

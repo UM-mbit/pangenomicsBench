@@ -1,5 +1,6 @@
 Minigraph Cactus uses toil. Toil will report the runtime for each job in the
-standard out.
+standard out. Cactus is installed in a virtual environment. Ensure your conda
+base environment is disactivated, and the cactus virtual environment is active.
 ###### Run graph alignment step.
 In minigraph this step is divided into first building a low fidelity graph, and 
 then aligning to it. The command divides work so the next step can be
