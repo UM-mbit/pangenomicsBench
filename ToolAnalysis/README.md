@@ -3,9 +3,12 @@
 1. Tool analysis is run on the unmodified tools[^1]. These can be found in the
    `Code` directory. Each tool has documentation in its respective github
    repository and readme. Make sure to build from source and compile with debug
-   information. NOTE: Minigraph-Cactus does not require debug info, and PGGB
-   can be installed via conda instead of building from source `conda install -c
-   bioconda -c conda-forge pggb`.
+   information if using VTune. NOTE: this is not necessary for Minigraph-Cactus 
+   and PGGB. Minigraph-Cactus binaries can be downloaded from the
+   release and run with a virtual environment instructions 
+   [here](https://github.com/ComparativeGenomicsToolkit/cactus/blob/v2.9.9/README.md).
+   PGGB can be installed via conda with
+   `conda install -c bioconda -c conda-forge pggb`.
 2. Download the data from our server into this directory and extract it to Data/
    using the commands:
    `wget https://genomicsbench.eecs.umich.edu/ToolDataPangenomicsBench.tar.gz && tar -xvzf ToolDataPangenomicsBench.tar.gz`
