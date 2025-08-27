@@ -16,7 +16,7 @@ It includes the following kernels:
    `git clone --recursive git@github.com:UM-mbit/pangenomicsBench.git`
 2. Please ensure all [dependencies](#dependencies) are met.
    For GSSW, which depends on vg, please `cd Gssw/deps/vg` and then follow the
-   instructions in the [vg README](Gssw/deps/vg/README.md) to install those
+   instructions in the [vg README](https://github.com/vgteam/vg) to install those
    dependencies. (`make get-deps` will work for Ubuntu)
 3. Install the profiling tools. Needed for profiling analysis. 
    `cd ProfileScripts && bash build.sh && cd ..`
