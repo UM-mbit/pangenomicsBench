@@ -96,6 +96,8 @@ All experiments are run on a linux system (Tested for Ubuntu 24.04, and 22.04).
 - conda (tested with 24.7.1). Must be initialized for the shell you are running.
   e.g. run `conda init bash`
 - cmake (tested with 3.26.0)
+- libtbb-dev (for odgi)
+- pybind11 (tested with 2.12. 2.9 will not build)
 - gcc/g++ (We use gcc 9, 11, and 13). Any one of these should compile, but we
   used the following for the results in the paper:
     - GSSW uses gcc 11  
