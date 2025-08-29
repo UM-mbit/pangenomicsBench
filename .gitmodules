@@ -1,23 +1,23 @@
 [submodule "vgGsswDump"]
 	path = Gssw/deps/vg
-	url = git@github.com:kaplannp/vg.git
+	url = https://github.com/kaplannp/vg.git
 	branch = dumper
 [submodule "GraphAligner"]
 	path = Gbv/deps/GraphAligner
-	url = git@github.com:kaplannp/GraphAligner.git
+	url = https://github.com/kaplannp/GraphAligner.git
 	branch = dumper
 [submodule "gbwt"]
 	path = Gbwt/deps/gbwt
-	url = git@github.com:kaplannp/gbwt.git
+	url = https://github.com/kaplannp/gbwt.git
 [submodule "sdsl-lite"]
 	path = Gbwt/deps/sdsl-lite
-	url = git@github.com:vgteam/sdsl-lite.git
+	url = https://github.com/vgteam/sdsl-lite.git
 [submodule "pgsgd/deps/odgi"]
 	path = Pgsgd/deps/odgi
-	url = git@github.com:nsmlzl/odgi.git
+	url = https://github.com/nsmlzl/odgi.git
 [submodule "minigraphDumper"]
 	path = Gwfa/deps/minigraphDumper
-	url = git@github.com:kaplannp/minigraph.git
+	url = https://github.com/kaplannp/minigraph.git
 	branch = serialization
 [submodule "minigraphKernel"]
 	path = Gwfa/deps/minigraphKernel
@@ -25,41 +25,41 @@
 	branch = kernel
 [submodule "OneStopProfileShop"]
 	path = ProfileScripts
-	url = git@github.com:kaplannp/OneStopProfileShop.git
+	url = https://github.com/kaplannp/OneStopProfileShop.git
 [submodule "transclosure/deps/seqwish"]
 	path = Tc/deps/seqwish
 	url = https://github.com/nsmlzl/seqwish.git
 [submodule "Gssw/deps/Gssw"]
 	path = Gssw/deps/Gssw
-	url = git@github.com:kaplannp/gssw.git
+	url = https://github.com/kaplannp/gssw.git
 [submodule "Pgsgd_gpu/odgi_gpu"]
 	path = Pgsgd_gpu/deps/odgi_gpu
-	url = git@github.com:pangenome/odgi.git
+	url = https://github.com/pangenome/odgi.git
 [submodule "TSUNAMI_PACT"]
 	path = GpuWfa/deps/TSUNAMI_PACT
 	url = git@github.com:giuliagerometta/TSUNAMI_PACT.git
 [submodule "WFA2-lib"]
 	path = GpuWfa/deps/WFA2-lib
-	url = git@github.com:smarco/WFA2-lib.git
+	url = https://github.com/smarco/WFA2-lib.git
 [submodule "ToolAnalysis/Code/GraphAligner"]
 	path = ToolAnalysis/Code/GraphAligner
-	url = git@github.com:maickrau/GraphAligner.git
+	url = https://github.com/maickrau/GraphAligner.git
 [submodule "ToolAnalysis/Code/minigraph"]
 	path = ToolAnalysis/Code/minigraph
-	url = git@github.com:lh3/minigraph.git
+	url = https://github.com/lh3/minigraph.git
 [submodule "ToolAnalysis/Code/odgi"]
 	path = ToolAnalysis/Code/odgi
-	url = git@github.com:nsmlzl/odgi.git
+	url = https://github.com/nsmlzl/odgi.git
 	branch = benchmark_v0
 [submodule "ToolAnalysis/Code/vg"]
 	path = ToolAnalysis/Code/vg
-	url = git@github.com:vgteam/vg.git
+	url = https://github.com/vgteam/vg.git
 [submodule "ToolAnalysis/Code/seqwish"]
 	path = ToolAnalysis/Code/seqwish
 	url = https://github.com/nsmlzl/seqwish.git
 [submodule "ToolAnalysis/Code/cactus"]
 	path = ToolAnalysis/Code/cactus
-	url = git@github.com:ComparativeGenomicsToolkit/cactus.git
+	url = https://github.com/ComparativeGenomicsToolkit/cactus.git
 [submodule "Pgsgd_gpu/deps/odgi_cpu"]
 	path = Pgsgd_gpu/deps/odgi_cpu
 	url = https://github.com/nsmlzl/odgi.git
