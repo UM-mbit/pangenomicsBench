@@ -2,6 +2,8 @@
 #include <vector>
 #include <chrono>
 #include <string>
+#include <fstream>
+#include <set>
 #include <omp.h>
 #include <algorithm>
 #include "gfa.h"
@@ -48,9 +50,18 @@ int main(int argc, char* argv[]){
 
   int numIters = std::min((int) zBuff->size(), num_iter_override);
 
-  //DEBUG
-  //gfa_print(graph, stdout, 0);
-  
+  // Load slow iteration indices from slowerThan10k.txt
+  std::set<int> slowIters;
+  {
+    std::ifstream sf("slowerThan10k.txt");
+    std::string line;
+    while (std::getline(sf, line)) {
+      // format: "i=<num>  time=<num>us"
+      int idx = std::stoi(line.substr(2));
+      slowIters.insert(idx);
+    }
+  }
+
   BEGIN_ROI
   std::cout << "Running Kernel" << std::endl;
   auto kernel_start = std::chrono::system_clock::now();
@@ -60,6 +71,7 @@ int main(int argc, char* argv[]){
   #pragma omp for
 #endif
   for (int i=0; i < numIters; i++){ //loop over reads (or really anchors)
+    if (slowIters.count(i) == 0) continue;
     auto iterStart = std::chrono::system_clock::now();
     //run the kernel
     gfa_ed_step((*zBuff)[i],

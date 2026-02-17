@@ -102,7 +102,7 @@ gfa_edopt_t* initOpt(){
   gfa_edopt_init(opt); //allocates some space and sets (bad) default values 
   //These hardcoded values are the same way they are assigned in minigraph code
   //that calls the kernel
-	opt->traceback = 1;
+	opt->traceback = 0;
   opt->max_chk = 1000;
   opt->bw_dyn = 1000;
   opt->max_lag = GDP_MAX_ED/2;

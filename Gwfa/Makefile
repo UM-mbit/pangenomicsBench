@@ -27,6 +27,16 @@ CPP_OBJ_FILES_SINGLE := $(patsubst %, $(OBJ_DIR)/%.single.o, $(CPP_FILES))
 CPP_OBJ_FILES_PROF := $(patsubst %, $(OBJ_DIR)/%.prof.o, $(CPP_FILES))
 CPP_OBJ_FILES_OMP := $(patsubst %, $(OBJ_DIR)/%.omp.o, $(CPP_FILES))
 
+ifneq ($(DBG),)
+	CXXFLAGS+=-DGFA_ED_DBG=4
+	CFLAGS+=-DGFA_ED_DBG=4
+	CCFLAGS+=-DGFA_ED_DBG=4
+endif
+ifneq ($(GDB),)
+	CXXFLAGS+=-O0 -ggdb
+	CFLAGS+=-O0 -ggdb
+	CCFLAGS+=-O0 -ggdb
+endif
 #all:$(OBJ_DIR) $(BIN_DIR) $(BIN_DIR)/$(EXE).omp $(BIN_DIR)/$(EXE).prof $(BIN_DIR)/$(EXE)
 all:$(OBJ_DIR) $(BIN_DIR) $(BIN_DIR)/$(EXE) $(BIN_DIR)/$(EXE).omp $(BIN_DIR)/$(EXE).prof
 
