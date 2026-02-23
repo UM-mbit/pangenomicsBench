@@ -61,8 +61,33 @@ $(BIN_DIR)/$(EXE): $(CPP_OBJ_FILES_SINGLE) $(C_OBJ_FILES)
 $(BIN_DIR)/$(EXE).omp: $(CPP_OBJ_FILES_OMP) $(C_OBJ_FILES)
 	$(CXX) $(INCLUDE_FLAGS) -o $@ $^ $(LD_LIB_DIR_FLAGS) $(LD_LIB_FLAGS) 
 $(BIN_DIR)/$(EXE).prof: $(CPP_OBJ_FILES_PROF) $(C_OBJ_FILES)
-	$(CXX) $(INCLUDE_FLAGS) -o $@ $^ $(LD_LIB_DIR_FLAGS) $(LD_LIB_FLAGS) 
+	$(CXX) $(INCLUDE_FLAGS) -o $@ $^ $(LD_LIB_DIR_FLAGS) $(LD_LIB_FLAGS)
 
+# --- dump target (writes GwfaDump/) ---
+$(OBJ_DIR)/%.cpp.dump.o: $(SRC_DIR)/%.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) -DDUMP_GWFA -c -o $@ $^
+$(OBJ_DIR)/%.c.dump.o: $(MINIGRAPH_DIR)/%.c
+	$(CC) $(CCFLAGS) $(INCLUDE_FLAGS) -DDUMP_GWFA -c -o $@ $^
+
+CPP_OBJ_FILES_DUMP := $(patsubst %, $(OBJ_DIR)/%.dump.o, $(CPP_FILES))
+C_OBJ_FILES_DUMP := $(patsubst %, $(OBJ_DIR)/%.dump.o, $(C_FILES))
+
+$(BIN_DIR)/$(EXE).dump: $(CPP_OBJ_FILES_DUMP) $(C_OBJ_FILES_DUMP)
+	$(CXX) $(INCLUDE_FLAGS) -o $@ $^ $(LD_LIB_DIR_FLAGS) $(LD_LIB_FLAGS)
+
+dump: $(OBJ_DIR) $(BIN_DIR) $(BIN_DIR)/$(EXE).dump
+
+# --- verify target (loads GwfaDump/, calls gwfa) ---
+VERIFY_CPP_FILES := main.cpp loadParams.cpp eval.cpp loadGwfa.cpp
+$(OBJ_DIR)/%.cpp.verify.o: $(SRC_DIR)/%.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) -DVERIFY_DUMP -c -o $@ $^
+
+CPP_OBJ_FILES_VERIFY := $(patsubst %, $(OBJ_DIR)/%.verify.o, $(VERIFY_CPP_FILES))
+
+$(BIN_DIR)/$(EXE).verify: $(CPP_OBJ_FILES_VERIFY) $(C_OBJ_FILES)
+	$(CXX) $(INCLUDE_FLAGS) -o $@ $^ $(LD_LIB_DIR_FLAGS) $(LD_LIB_FLAGS)
+
+verify: $(OBJ_DIR) $(BIN_DIR) $(BIN_DIR)/$(EXE).verify
 
 clean:
 	rm -f $(BIN_DIR)/*
