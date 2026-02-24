@@ -52,8 +52,7 @@ int main(int argc, char* argv[]){
       score = -1;
     } else {
       score = gwfa(inp.ql, inp.q.c_str(),
-        inp.startV, inp.startOff,
-        inp.endV, inp.endOff,
+        inp.startV, inp.endV,
         inp.sub, inp.s_term, gfa_ed_dbg);
     }
     auto tE = std::chrono::system_clock::now();
