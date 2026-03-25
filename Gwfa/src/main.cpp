@@ -4,6 +4,8 @@
 #include <string>
 #include <fstream>
 #include <set>
+#include <cctype>
+#include <cstdlib>
 #include <omp.h>
 #include <algorithm>
 #include <climits>
@@ -38,7 +40,7 @@ int main(int argc, char* argv[]){
   auto load_end = std::chrono::system_clock::now();
 
   int n = std::min((int)inputs.size(),
-	numItersLimit);
+    numItersLimit);
 
   FILE *sfp = fopen("scores.txt", "w");
 
@@ -92,20 +94,80 @@ int main(int argc, char* argv[]){
 }
 
 #else
+namespace {
+
+int parseIterIndex(const std::string& line) {
+  size_t start = line.find_first_of("-0123456789");
+  if (start == std::string::npos) {
+    return -1;
+  }
+  size_t end = start + 1;
+  while (end < line.size()
+      && std::isdigit(
+        static_cast<unsigned char>(line[end]))) {
+    ++end;
+  }
+  return std::stoi(line.substr(start, end - start));
+}
+
+std::set<int> loadSlowIters(const std::string& path) {
+  std::ifstream sf(path);
+  if (!sf) {
+    std::cerr << "Failed to open slow-iteration file: "
+      << path << std::endl;
+    std::exit(1);
+  }
+
+  std::set<int> slowIters;
+  std::string line;
+  while (std::getline(sf, line)) {
+    if (line.empty()) {
+      continue;
+    }
+    int idx = parseIterIndex(line);
+    if (idx >= 0) {
+      slowIters.insert(idx);
+    }
+  }
+  return slowIters;
+}
+
+void destroyZs(std::vector<void*>* zBuff) {
+  if (!zBuff) {
+    return;
+  }
+  for (void* z : *zBuff) {
+    gfa_ed_destroy(z);
+  }
+  delete zBuff;
+}
+
+void destroyKms(std::vector<void*>* kmBuff) {
+  if (!kmBuff) {
+    return;
+  }
+  for (void* km : *kmBuff) {
+    km_destroy(km);
+  }
+  delete kmBuff;
+}
+
+} // namespace
+
 /*---------------------------------------------------
- * Normal mode (+ optional dump via -DDUMP_GWFA)
+ * Baseline timing mode
  *-------------------------------------------------*/
 int main(int argc, char* argv[]){
-  std::string inputDir =
-    getInputDirFromArgs(argc, argv);
-  int num_iter_override =
-    getNumItersFromArgs(argc, argv);
+  if (argc != 3) {
+    std::cerr << "Usage: " << argv[0]
+      << " <input-dir> <slow-iter-file>"
+      << std::endl;
+    return 1;
+  }
 
-  init_output_dir(OUT_DIR);
+  std::string inputDir = argv[1];
+  std::string slowItersPath = argv[2];
 
-  //load the inputs
-  std::cout << "Loading Inputs" << std::endl;
-  auto load_start = std::chrono::system_clock::now();
   std::vector<uint32_t>* v0Buff =
     loadScalarInput<uint32_t>(
       inputDir+"/Inputs/v0.txt");
@@ -125,6 +187,13 @@ int main(int argc, char* argv[]){
       inputDir+"/Inputs/v1.txt");
   gfa_t* graph = gfa_read(
     (inputDir+"/Inputs/graph.gfa").c_str());
+  if (!graph) {
+    std::cerr << "Failed to read graph from "
+      << inputDir << "/Inputs/graph.gfa"
+      << std::endl;
+    return 1;
+  }
+
   std::vector<void*>* kmBuff =
     initKms(v0Buff->size());
   gfa_edopt_t* opt = initOpt();
@@ -133,92 +202,45 @@ int main(int argc, char* argv[]){
     kmBuff, opt, graph, es,
     queryGapLenBuff, queryGapBuff,
     v0Buff, end0Buff);
-  std::vector<gfa_edrst_t> results =
-    std::vector<gfa_edrst_t>(v0Buff->size());
 
-  auto load_end = std::chrono::system_clock::now();
+  std::set<int> slowIters =
+    loadSlowIters(slowItersPath);
+  int64_t totalKernelUs = 0;
 
-  int numIters = std::min(
-    (int) zBuff->size(), num_iter_override);
-
-  // Load slow iteration indices
-  std::set<int> slowIters;
-  {
-    std::ifstream sf("slowerThan10k.txt");
-    std::string line;
-    while (std::getline(sf, line)) {
-      int idx = std::stoi(line.substr(2));
-      slowIters.insert(idx);
+  for (int i = 0; i < (int)zBuff->size(); i++) {
+    if (slowIters.count(i) == 0) {
+      continue;
     }
-  }
 
-  BEGIN_ROI
-  std::cout << "Running Kernel" << std::endl;
-  auto kernel_start =
-    std::chrono::system_clock::now();
-#if (THREADING_ENABLED==1)
-  #pragma omp parallel
-  printf("launching thread %d\n",
-    omp_get_thread_num());
-  #pragma omp for
-#endif
-  for (int i = 0; i < numIters; i++) {
-    if (slowIters.count(i) == 0) continue;
-    auto iterStart =
-      std::chrono::system_clock::now();
-    gfa_ed_step((*zBuff)[i],
+    gfa_edrst_t result = {};
+    gfa_edtiming_t timing = {};
+    gfa_ed_step_timed((*zBuff)[i],
       (*v1Buff)[i], (*end1Buff)[i],
-      GDP_MAX_ED, &(results[i]));
-    auto iterEnd =
-      std::chrono::system_clock::now();
-    auto iterTime = std::chrono::duration_cast<
-      std::chrono::microseconds>(
-      iterEnd - iterStart).count();
-    std::cout << "i: " << i << std::endl;
-    std::cout << "iterTime: "
-      << iterTime << "us" << std::endl;
-    std::cout << "(v0, end0), (v1, end1): ("
-      << (*v0Buff)[i] << ", "
-      << (*end0Buff)[i] << "), ("
-      << (*v1Buff)[i] << ", "
-      << (*end1Buff)[i] << ")" << std::endl;
-    std::cout << "queryGapLen: "
-      << (*queryGapLenBuff)[i] << std::endl;
-    std::cout << std::endl;
+      GDP_MAX_ED, &result, &timing);
+
+    totalKernelUs += timing.gwfa_us
+      + timing.subgraph_us;
+    std::cout << i << " "
+      << timing.gwfa_us << " "
+      << timing.subgraph_us << std::endl;
   }
-  auto kernel_end =
-    std::chrono::system_clock::now();
-  std::cout << "Kernel Complete" << std::endl;
-  END_ROI
 
-  std::cout << "Writing Outputs" << std::endl;
-  auto write_start =
-    std::chrono::system_clock::now();
-  writeResults(&results, OUT_DIR, numIters);
-  auto write_end =
-    std::chrono::system_clock::now();
+  std::cout << "total_kernel_us "
+    << totalKernelUs << std::endl;
+  std::cout << "i gwfaTime subgraphBuildtime"
+    << std::endl;
 
-  auto load_time_us =
-    std::chrono::duration_cast<
-    std::chrono::microseconds>(
-    load_end - load_start).count();
-  auto kernel_time_us =
-    std::chrono::duration_cast<
-    std::chrono::microseconds>(
-    kernel_end - kernel_start).count();
-  auto write_time_us =
-    std::chrono::duration_cast<
-    std::chrono::microseconds>(
-    write_end - write_start).count();
-  std::cout << "load time: "
-    << load_time_us << "us" << std::endl;
-  std::cout << "kernel time: "
-    << kernel_time_us << "us" << std::endl;
-  std::cout << "write time: "
-    << write_time_us << "us" << std::endl;
-
-#ifdef DUMP_GWFA
-  dump_gwfa_flush();
-#endif
+  destroyZs(zBuff);
+  destroyKms(kmBuff);
+  gfa_edseq_destroy(graph->n_seg, es);
+  gfa_destroy(graph);
+  delete opt;
+  delete v0Buff;
+  delete queryGapBuff;
+  delete queryGapLenBuff;
+  delete end1Buff;
+  delete end0Buff;
+  delete v1Buff;
+  return 0;
 }
 #endif /* VERIFY_DUMP */
