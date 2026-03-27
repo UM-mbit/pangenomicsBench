@@ -49,26 +49,7 @@ std::vector<ReadAlignmentParams>* load_read_alignment_params(size_t num_inputs,
 // Encode ASCII read to numeric (A=0, C=1, G=2, T=3)
 std::vector<int8_t> encode_read(const std::string& seq);
 
-/*
- * Load the gssw graph for this iteration
- * @param string inDir, the root directory of the Inputs
- * @retun gssw_graph*, ptr the loaded graph
- */
-nlohmann::json* ld_gssw_graph(std::string in_dir);
-
-/*
- * Load the sequence for this iteration
- * @param string inDir, the root directory of the Inputs
- * @param int ind, the index of this iteration
- * @return string, sequence 
- */
-std::string ld_seq(std::string in_dir, int ind);
-
-/*
- * Counts the number of reads to process
- * @param string inDir, the root directory of the Inputs
- * @return return the number of reads we're running
- */
+// Counts the number of reads to process
 int ld_num_inputs(std::string in_dir);
 
 

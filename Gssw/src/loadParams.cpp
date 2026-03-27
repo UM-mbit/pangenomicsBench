@@ -52,6 +52,9 @@ ReadAlignmentParams::~ReadAlignmentParams(){
   if (graph) gssw_soa_graph_destroy(graph);
 }
 
+// Forward declarations for internal functions
+static nlohmann::json* ld_gssw_graph(std::string in_dir);
+
 // Check if a read sequence contains N or n
 static bool read_has_n(const std::string& seq){
   for (char c : seq){
@@ -291,7 +294,7 @@ std::vector<int8_t> encode_read(const std::string& seq) {
   return num;
 }
 
-nlohmann::json* ld_gssw_graph(std::string in_dir){
+static nlohmann::json* ld_gssw_graph(std::string in_dir){
   //std::cerr << "about to open the file" << std::endl;
   std::ifstream f(in_dir+"/Inputs/graph.json");
   //std::cerr << in_dir+"/Inputs/Graphs/g"+std::to_string(ind)+".json" << std::endl;
@@ -303,26 +306,6 @@ nlohmann::json* ld_gssw_graph(std::string in_dir){
   return data;
 }
 
-
-std::string ld_seq(std::string in_dir, int ind){
-  std::string data("");
-  std::string lineNum("");
-  std::ifstream f(in_dir+"/Inputs/reads.txt");
-
-  //scan up until the appropriate line
-  std::string line("");
-  std::getline(f,line);
-  int i = 0;
-  while (i < ind) { std::getline(f,line); i++;}
-  std::istringstream lineStream(line);
-  
-  //strip the number from line
-  std::getline(lineStream, lineNum, ' ');
-  //get the remainder (the data)
-  std::getline(lineStream, data);
-
-  return data;
-}
 
 int ld_num_inputs(std::string in_dir){
   std::string data("");

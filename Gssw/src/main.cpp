@@ -1,8 +1,5 @@
 #include <iostream>
-#include <cstring>
 #include <fstream>
-#include <stdint.h>
-#include <cstdlib>
 #include <vector>
 #include <omp.h>
 #include <chrono>
