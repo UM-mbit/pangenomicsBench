@@ -21,6 +21,7 @@ OBJ_FILES_ROOT := $(OBJ_DIR)/eval.cpp $(OBJ_DIR)/loadParams.cpp $(OBJ_DIR)/gssw_
 OBJ_FILES_SINGLE := $(addsuffix .single.o, $(OBJ_FILES_ROOT))
 OBJ_FILES_PROF := $(addsuffix .prof.o, $(OBJ_FILES_ROOT))
 OBJ_FILES_OMP := $(addsuffix .omp.o, $(OBJ_FILES_ROOT))
+OBJ_FILES_DUMP := $(addsuffix .dump.o, $(OBJ_FILES_ROOT))
 
 all:$(OBJ_DIR) $(BIN_DIR) $(BIN_DIR)/$(EXE) $(BIN_DIR)/$(EXE).omp $(BIN_DIR)/$(EXE).prof
 
@@ -63,6 +64,17 @@ $(BIN_DIR)/$(EXE).prof: $(OBJ_FILES_PROF)
 	$(CXX) $(INCLUDE_FLAGS) -o $@ $^ $(LD_LIB_DIR_FLAGS) $(LD_LIB_FLAGS)
 #END PROFILABLE REGION
 
+#BEGIN DUMP REGION (binary dataset generation)
+$(OBJ_DIR)/gssw_to_json.cpp.dump.o: $(DEP_SRC_DIR)/gssw_to_json.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) -c -o $@ $(DEP_SRC_DIR)/gssw_to_json.cpp -DDUMP_GRAPH
+
+$(OBJ_DIR)/%.cpp.dump.o: $(SRC_DIR)/%.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) -c -o $@ $^ -DDUMP_GRAPH
+
+$(BIN_DIR)/$(EXE).dump: $(OBJ_FILES_DUMP)
+	$(CXX) $(INCLUDE_FLAGS) -o $@ $^ $(LD_LIB_DIR_FLAGS) $(LD_LIB_FLAGS)
+#END DUMP REGION
+
 clean:
-	rm -f $(BIN_DIR)/$(EXE) $(BIN_DIR)/$(EXE).omp $(BIN_DIR)/$(EXE).prof
+	rm -f $(BIN_DIR)/$(EXE) $(BIN_DIR)/$(EXE).omp $(BIN_DIR)/$(EXE).prof $(BIN_DIR)/$(EXE).dump
 	rm -f $(OBJ_DIR)/*.o
