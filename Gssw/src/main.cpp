@@ -23,11 +23,12 @@ int main(int argc, char* argv[]){
 
   init_output_dir(OUT_DIR);
   int num_inputs = ld_num_inputs(inputDir);
-  std::vector<ReadAlignmentParams>* params =
-      load_read_alignment_params(num_inputs, inputDir);
-  auto load_end = std::chrono::system_clock::now();
-  
   int numIters = std::min(num_inputs, num_iter_override);
+  std::vector<ReadAlignmentParams>* params =
+      load_read_alignment_params(numIters, inputDir);
+  // N-filtering may reduce count below numIters
+  numIters = (int)params->size();
+  auto load_end = std::chrono::system_clock::now();
   BEGIN_ROI
   std::cout << "Running Kernel" << std::endl;
   auto kernel_start = std::chrono::system_clock::now();
@@ -61,46 +62,42 @@ int main(int argc, char* argv[]){
   std::cout << "Kernel Complete" << std::endl;
   END_ROI
 
+  // Write scores (one per line)
   std::cout << "Writing Outputs" << std::endl;
   auto write_start = std::chrono::system_clock::now();
-  for (int i = 0; i < numIters; i++){
-    //load inputs
-    gssw_graph* graph = (*params)[i].graph;
-    std::string seq = (*params)[i].seq;
-    int8_t* nt_table = (*params)[i].nt_table;
-    int8_t* score_matrix = (*params)[i].score_matrix;
-
-    //generate outputs
-    gssw_graph_mapping* ggm = gssw_graph_trace_back( 
-                                   graph,
-                                   seq.c_str(),
-                                   seq.size(),
-                                   nt_table,
-                                   score_matrix,
-                                   constants::weight_gapO, 
-                                   constants::weight_gapE, 
-                                   constants::start_full_length_bonus,
-                                   constants::end_full_length_bonus);
-    //write outputs
-    write_ggm(OUT_DIR, ggm);
-  
-    //cleanup
-    gssw_graph_mapping_destroy(ggm);
+  {
+    std::ofstream scoreFile(std::string(OUT_DIR) + "/scores.txt");
+    for (int i = 0; i < numIters; i++){
+      gssw_graph* graph = (*params)[i].graph;
+      scoreFile << graph->max_node->alignment->score1 << "\n";
+    }
   }
   auto write_end = std::chrono::system_clock::now();
-  
-  //write the timing breakdown
-  auto load_time_us = std::chrono::duration_cast<std::chrono::microseconds>(
-                                    load_end-load_start).count();
-  auto kernel_time_us = std::chrono::duration_cast<std::chrono::microseconds>(
-                                    kernel_end-kernel_start).count();
-  auto write_time_us = std::chrono::duration_cast<std::chrono::microseconds>(
-                                    write_end-write_start).count();
+
+  // Timing breakdown
+  auto load_time_us =
+    std::chrono::duration_cast<std::chrono::microseconds>(
+      load_end - load_start).count();
+  auto kernel_time_us =
+    std::chrono::duration_cast<std::chrono::microseconds>(
+      kernel_end - kernel_start).count();
+  auto write_time_us =
+    std::chrono::duration_cast<std::chrono::microseconds>(
+      write_end - write_start).count();
   std::cout << "load time: " << load_time_us << "us" << std::endl;
-  std::cout << "kernel time: " << kernel_time_us << "us" << std::endl;
+  std::cout << "kernel time: " << kernel_time_us << "us"
+            << std::endl;
   std::cout << "write time: " << write_time_us << "us" << std::endl;
 
-  
+  // Save timing to file
+  {
+    std::ofstream timeFile(std::string(OUT_DIR) + "/time.txt");
+    timeFile << "kernel_time_us: " << kernel_time_us << "\n";
+    timeFile << "num_queries: " << numIters << "\n";
+    timeFile << "avg_time_per_query_us: "
+             << (double)kernel_time_us / numIters << "\n";
+  }
+
   delete params;
 }
 

@@ -47,24 +47,85 @@ int getNumItersFromArgs(int argc, char* argv[]){
 }
 
 ReadAlignmentParams::~ReadAlignmentParams(){
-  gssw_graph_destroy(graph);
-  delete nt_table;
-  delete score_matrix;
+  if (graph) gssw_graph_destroy(graph);
+  delete[] nt_table;
+  delete[] score_matrix;
 }
 
-std::vector<ReadAlignmentParams>* load_read_alignment_params(size_t num_inputs,
-                                                        std::string input_dir){
-  std::vector<ReadAlignmentParams>* params = 
-         new std::vector<ReadAlignmentParams>(num_inputs);
-
-  nlohmann::json* graphs = ld_gssw_graph(input_dir);
-  for (int i = 0; i < num_inputs; i++){
-    (*params)[i].graph = ld_graph((*graphs)[i]);
-    std::string seq = ld_seq(input_dir, i);
-    (*params)[i].seq = seq;
-    (*params)[i].nt_table = get_nt_table(seq.size());
-    (*params)[i].score_matrix = get_score_matrix();
+// Check if a read sequence contains N or n
+static bool read_has_n(const std::string& seq){
+  for (char c : seq){
+    if (c == 'N' || c == 'n') return true;
   }
+  return false;
+}
+
+// Check if any node in the graph has N (num value 4) in its sequence
+static bool graph_has_n(gssw_graph* g){
+  for (uint32_t i = 0; i < g->size; i++){
+    gssw_node* n = g->nodes[i];
+    for (int32_t j = 0; j < n->len; j++){
+      if (n->num[j] == 4) return true;
+    }
+  }
+  return false;
+}
+
+// Load first num_reads reads from reads.txt in a single pass
+static std::vector<std::string> ld_seqs(
+    const std::string& input_dir, size_t num_reads){
+  std::vector<std::string> seqs;
+  seqs.reserve(num_reads);
+  std::ifstream f(input_dir + "/Inputs/reads.txt");
+  std::string line;
+  for (size_t i = 0; i < num_reads && std::getline(f, line); i++){
+    // Strip the line number prefix ("123: ")
+    size_t space_pos = line.find(' ');
+    if (space_pos != std::string::npos)
+      seqs.push_back(line.substr(space_pos + 1));
+    else
+      seqs.push_back(line);
+  }
+  return seqs;
+}
+
+std::vector<ReadAlignmentParams>* load_read_alignment_params(
+    size_t num_inputs, std::string input_dir){
+  nlohmann::json* graphs = ld_gssw_graph(input_dir);
+  size_t json_size = graphs->size();
+  size_t limit = std::min(num_inputs, json_size);
+
+  // Load all needed reads in a single pass (avoids O(N^2) re-scan)
+  std::vector<std::string> seqs = ld_seqs(input_dir, limit);
+  limit = std::min(limit, seqs.size());
+
+  // Allocate at max size, fill valid entries, resize at the end
+  std::vector<ReadAlignmentParams>* params =
+         new std::vector<ReadAlignmentParams>(limit);
+  size_t out_idx = 0;
+  int skipped = 0;
+  for (size_t i = 0; i < limit; i++){
+    gssw_graph* g = ld_graph((*graphs)[i]);
+
+    // Filter out queries containing N
+    if (read_has_n(seqs[i]) || graph_has_n(g)){
+      gssw_graph_destroy(g);
+      skipped++;
+      continue;
+    }
+
+    (*params)[out_idx].graph = g;
+    (*params)[out_idx].seq = seqs[i];
+    (*params)[out_idx].nt_table = get_nt_table(seqs[i].size());
+    (*params)[out_idx].score_matrix = get_score_matrix();
+    out_idx++;
+  }
+  params->resize(out_idx);
+  if (skipped > 0){
+    std::cout << "Filtered " << skipped
+              << " queries containing N" << std::endl;
+  }
+  delete graphs;
   return params;
 }
 

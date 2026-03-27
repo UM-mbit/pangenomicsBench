@@ -28,6 +28,8 @@ typedef struct ReadAlignmentParams {
   std::string seq;
   int8_t* nt_table;
   int8_t* score_matrix;
+  ReadAlignmentParams()
+    : graph(nullptr), nt_table(nullptr), score_matrix(nullptr) {}
   ~ReadAlignmentParams();
 } ReadAlignmentParams;
 
