@@ -49,12 +49,11 @@ int main(int argc, char* argv[]){
                             seq.c_str(),
                             nt_table,
                             score_matrix,
-                            constants::weight_gapO, 
-                            constants::weight_gapE, 
+                            constants::weight_gapO,
+                            constants::weight_gapE,
                             constants::start_full_length_bonus,
                             constants::end_full_length_bonus,
                             constants::maskLen,
-                            constants::score_size,
                             constants::save_matrixes );
 
   }
