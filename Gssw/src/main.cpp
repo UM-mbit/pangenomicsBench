@@ -37,25 +37,12 @@ int main(int argc, char* argv[]){
   printf("launching thread %d\n",omp_get_thread_num());
   #pragma omp for
 #endif
-  for (int i=0; i < numIters; i++){ //loop over reads (or really anchors)
-    //load inputs
+  for (int i=0; i < numIters; i++){ //loop over reads
     gssw_soa_graph* graph = (*params)[i].graph;
-    std::string seq = (*params)[i].seq;
-    int8_t* nt_table = (*params)[i].nt_table;
-    int8_t* score_matrix = (*params)[i].score_matrix;
-
-    //run the kernel
+    std::vector<int8_t> read_num =
+        encode_read((*params)[i].seq);
     (*params)[i].score = gssw_soa_graph_fill(
-                            graph,
-                            seq.c_str(),
-                            nt_table,
-                            score_matrix,
-                            constants::weight_gapO,
-                            constants::weight_gapE,
-                            constants::start_full_length_bonus,
-                            constants::end_full_length_bonus,
-                            constants::maskLen );
-
+        graph, read_num.data(), read_num.size());
   }
   auto kernel_end = std::chrono::system_clock::now();
   std::cout << "Kernel Complete" << std::endl;

@@ -9,14 +9,6 @@
 #include "gssw.h"
 #include "nlohmann/json.hpp"
  
-namespace constants{
-  const uint8_t weight_gapO = 6;
-  const uint8_t weight_gapE = 1;
-  const int8_t start_full_length_bonus = 5;
-  const int8_t end_full_length_bonus = 5;
-  const int32_t maskLen = 15;
-}
-
 /*
  * Convenient structure for holding the parameters needed for a single iteration
  * (read) of gssw.
@@ -24,12 +16,8 @@ namespace constants{
 typedef struct ReadAlignmentParams {
   gssw_soa_graph* graph;
   std::string seq;
-  int8_t* nt_table;
-  int8_t* score_matrix;
   uint16_t score;  // filled by kernel
-  ReadAlignmentParams()
-    : graph(nullptr), nt_table(nullptr),
-      score_matrix(nullptr), score(0) {}
+  ReadAlignmentParams() : graph(nullptr), score(0) {}
   ~ReadAlignmentParams();
 } ReadAlignmentParams;
 
@@ -58,25 +46,8 @@ std::vector<ReadAlignmentParams>* load_read_alignment_params(size_t num_inputs,
                                                         std::string input_dir);
 
 
-/*
- * At a glance:
- * This is a semi constant input to kernel, the size varies with the sequence
- * length though
- * In more depth
- * In vg this is generated according to a constant formula/patttern using some
- * for loops, I just keep a hardcoded list and get substrings of it.
- * @param size_t seqLen the length of the sequence
- * @returns int_8* nt_table array input for gssw
- */
-int8_t* get_nt_table(size_t seqLen);
-
-/*
- * This is constant, but gssw wants it as a non const object, though I don't
- * believe it changes it. To be safe this copies the object so there is no
- * chance of modifying it
- * @returns score matrix {1,-4,-4,-4}
- */
-int8_t* get_score_matrix();
+// Encode ASCII read to numeric (A=0, C=1, G=2, T=3)
+std::vector<int8_t> encode_read(const std::string& seq);
 
 /*
  * Load the gssw graph for this iteration

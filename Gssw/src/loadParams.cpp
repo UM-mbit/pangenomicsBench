@@ -50,8 +50,6 @@ int getNumItersFromArgs(int argc, char* argv[]){
 
 ReadAlignmentParams::~ReadAlignmentParams(){
   if (graph) gssw_soa_graph_destroy(graph);
-  delete[] nt_table;
-  delete[] score_matrix;
 }
 
 // Check if a read sequence contains N or n
@@ -234,8 +232,6 @@ std::vector<ReadAlignmentParams>* load_read_alignment_params(
 
       (*params)[out_idx].graph = g;
       (*params)[out_idx].seq = seq;
-      (*params)[out_idx].nt_table = get_nt_table(seq.size());
-      (*params)[out_idx].score_matrix = get_score_matrix();
       out_idx++;
     }
     params->resize(out_idx);
@@ -267,8 +263,6 @@ std::vector<ReadAlignmentParams>* load_read_alignment_params(
 
       (*params)[out_idx].graph = g;
       (*params)[out_idx].seq = seqs[i];
-      (*params)[out_idx].nt_table = get_nt_table(seqs[i].size());
-      (*params)[out_idx].score_matrix = get_score_matrix();
       out_idx++;
     }
     params->resize(out_idx);
@@ -282,25 +276,19 @@ std::vector<ReadAlignmentParams>* load_read_alignment_params(
   return params;
 }
 
-int8_t* get_nt_table(size_t seqLen){
-//This one is a little funky. In vg it is initialized according to a constant
-//pattern that uses some for loops. Here we've just taken the first 255 elements
-//and will use substrings to generate however many are needed
-  static int8_t full_nt_table[255]{4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 4, 1, 4, 4, 4, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 4, 1, 4, 4, 4, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 71, 67, 84, 67, 0, -15, 32, -96, -94, 127, 0, 0, -128, -53, 32, -96, -94, 127, 0, 0, -128, -105, 33, -96, -94, 127, 0, 0, 48, -1, -122, -96, -94, 127, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 83, 50, 50, 53, 95, 52, 56, 50, 49, 52, 57, 0, -2, 127, 0, 0, 80, -1, -122, -96, -94, 127, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 83, 50, 50, 53, 95, 52, 56, 50, 49, 52, 57, 0, 71, 84, 67, 71, -92, 0, 0, 0, 65, 71, 65, 67, 13, 0, 0, 0, 0, 0, 0, 0, -92, 0, 0, 0, -91, 0, 0, 0, 0, 4, 4, 4, 4, 4};
-  int8_t* nt_table = new int8_t[255];
-  for (int i = 0; i < seqLen; i++){
-    nt_table[i] = full_nt_table[i];
+// Encode ASCII read to numeric (A=0, C=1, G=2, T=3)
+std::vector<int8_t> encode_read(const std::string& seq) {
+  std::vector<int8_t> num(seq.size());
+  for (size_t i = 0; i < seq.size(); i++) {
+    switch (seq[i]) {
+      case 'A': case 'a': num[i] = 0; break;
+      case 'C': case 'c': num[i] = 1; break;
+      case 'G': case 'g': num[i] = 2; break;
+      case 'T': case 't': num[i] = 3; break;
+      default: num[i] = 0; break; // N filtered out already
+    }
   }
-  return nt_table;
-}
-
-int8_t* get_score_matrix(){
-  int8_t* score_matrix = new int8_t[25]{1,-4,-4,-4, 0,
-                                       -4, 1,-4,-4, 0,
-                                       -4,-4, 1,-4, 0,
-                                       -4,-4,-4, 1, 0,
-                                        0, 0, 0, 0, 0};
-  return score_matrix;
+  return num;
 }
 
 nlohmann::json* ld_gssw_graph(std::string in_dir){
