@@ -47,7 +47,7 @@ int getNumItersFromArgs(int argc, char* argv[]){
 }
 
 ReadAlignmentParams::~ReadAlignmentParams(){
-  if (graph) gssw_graph_destroy(graph);
+  if (graph) gssw_soa_graph_destroy(graph);
   delete[] nt_table;
   delete[] score_matrix;
 }
@@ -105,14 +105,18 @@ std::vector<ReadAlignmentParams>* load_read_alignment_params(
   size_t out_idx = 0;
   int skipped = 0;
   for (size_t i = 0; i < limit; i++){
-    gssw_graph* g = ld_graph((*graphs)[i]);
+    gssw_graph* old_g = ld_graph((*graphs)[i]);
 
-    // Filter out queries containing N
-    if (read_has_n(seqs[i]) || graph_has_n(g)){
-      gssw_graph_destroy(g);
+    // Filter out queries containing N (check old graph before converting)
+    if (read_has_n(seqs[i]) || graph_has_n(old_g)){
+      gssw_graph_destroy(old_g);
       skipped++;
       continue;
     }
+
+    // Convert to SoA layout and discard old graph
+    gssw_soa_graph* g = convert_to_soa(old_g);
+    gssw_graph_destroy(old_g);
 
     (*params)[out_idx].graph = g;
     (*params)[out_idx].seq = seqs[i];

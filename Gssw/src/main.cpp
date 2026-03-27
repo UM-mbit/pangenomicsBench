@@ -39,13 +39,14 @@ int main(int argc, char* argv[]){
 #endif
   for (int i=0; i < numIters; i++){ //loop over reads (or really anchors)
     //load inputs
-    gssw_graph* graph = (*params)[i].graph;
+    gssw_soa_graph* graph = (*params)[i].graph;
     std::string seq = (*params)[i].seq;
     int8_t* nt_table = (*params)[i].nt_table;
     int8_t* score_matrix = (*params)[i].score_matrix;
 
     //run the kernel
-    gssw_graph_fill_pinned( graph,
+    (*params)[i].score = gssw_soa_graph_fill(
+                            graph,
                             seq.c_str(),
                             nt_table,
                             score_matrix,
@@ -66,8 +67,7 @@ int main(int argc, char* argv[]){
   {
     std::ofstream scoreFile(std::string(OUT_DIR) + "/scores.txt");
     for (int i = 0; i < numIters; i++){
-      gssw_graph* graph = (*params)[i].graph;
-      scoreFile << graph->max_node->alignment->score1 << "\n";
+      scoreFile << (*params)[i].score << "\n";
     }
   }
   auto write_end = std::chrono::system_clock::now();

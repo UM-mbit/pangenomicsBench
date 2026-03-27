@@ -22,12 +22,14 @@ namespace constants{
  * (read) of gssw.
  */
 typedef struct ReadAlignmentParams {
-  gssw_graph* graph;
+  gssw_soa_graph* graph;
   std::string seq;
   int8_t* nt_table;
   int8_t* score_matrix;
+  uint16_t score;  // filled by kernel
   ReadAlignmentParams()
-    : graph(nullptr), nt_table(nullptr), score_matrix(nullptr) {}
+    : graph(nullptr), nt_table(nullptr),
+      score_matrix(nullptr), score(0) {}
   ~ReadAlignmentParams();
 } ReadAlignmentParams;
 
