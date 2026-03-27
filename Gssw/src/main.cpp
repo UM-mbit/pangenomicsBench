@@ -53,8 +53,7 @@ int main(int argc, char* argv[]){
                             constants::weight_gapE,
                             constants::start_full_length_bonus,
                             constants::end_full_length_bonus,
-                            constants::maskLen,
-                            constants::save_matrixes );
+                            constants::maskLen );
 
   }
   auto kernel_end = std::chrono::system_clock::now();

@@ -15,7 +15,6 @@ namespace constants{
   const int8_t start_full_length_bonus = 5;
   const int8_t end_full_length_bonus = 5;
   const int32_t maskLen = 15;
-  const bool save_matrixes = 1;
 }
 
 /*
