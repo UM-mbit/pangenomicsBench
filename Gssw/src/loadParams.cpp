@@ -84,12 +84,25 @@ static bool soa_graph_has_n(gssw_soa_graph* g){
 // ---- Text-based SoA graph dump/load ----
 
 #ifdef DUMP_GRAPH
-// Write all SoA graphs to a plain text file.
-// Format per graph:
-//   num_nodes total_nexts total_seq
-//   (seq_off,seq_len,next_off,next_len), ...
-//   next, next, ...
-//   seq_val seq_val ...
+// Write all SoA graphs to a plain text file (graph.soa).
+//
+// File format:
+//   Line 1: <num_graphs>            (total number of graphs)
+//   Then for each graph:
+//     Line 1: <num_nodes> <total_nexts> <total_seq>
+//     Line 2: (seq_off,seq_len,next_off,next_len), ...
+//             One tuple per node, comma-separated.
+//             seq_off/seq_len index into the sequence line.
+//             next_off/next_len index into the nexts line.
+//     Line 3: <child_id> <child_id> ...
+//             Space-separated child node indices (topo order).
+//             Length = total_nexts.
+//     Line 4: <base> <base> ...
+//             Space-separated numeric bases (A=0,C=1,G=2,T=3).
+//             Length = total_seq.
+//
+// Reads are stored separately in reads.txt (one per line,
+// prefixed with "<index>: ").
 static void dump_text(const std::string& input_dir,
                       const std::vector<gssw_soa_graph*>& graphs){
   std::string path = input_dir + "/Inputs/graph.soa";
