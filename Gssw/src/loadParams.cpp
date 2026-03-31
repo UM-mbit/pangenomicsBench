@@ -2,7 +2,6 @@
 #include <cassert>
 #include <stdint.h>
 #include <cstdlib>
-#include <cstdio>
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -82,75 +81,111 @@ static bool soa_graph_has_n(gssw_soa_graph* g){
   return false;
 }
 
-// ---- Binary dump/load helpers ----
+// ---- Text-based SoA graph dump/load ----
 
 #ifdef DUMP_GRAPH
-// Write all graphs and reads to compact binary files
-static void dump_binary(const std::string& input_dir,
-                        const std::vector<gssw_soa_graph*>& graphs,
-                        const std::vector<std::string>& reads){
-  // Write graph.bin
-  std::string gpath = input_dir + "/Inputs/graph.bin";
-  FILE* gf = fopen(gpath.c_str(), "wb");
-  if (!gf){
-    std::cerr << "Failed to open " << gpath << std::endl;
+// Write all SoA graphs to a plain text file.
+// Format per graph:
+//   num_nodes total_nexts total_seq
+//   (seq_off,seq_len,next_off,next_len), ...
+//   next, next, ...
+//   seq_val seq_val ...
+static void dump_text(const std::string& input_dir,
+                      const std::vector<gssw_soa_graph*>& graphs){
+  std::string path = input_dir + "/Inputs/graph.soa";
+  std::ofstream f(path);
+  if (!f.is_open()){
+    std::cerr << "Failed to open " << path << std::endl;
     return;
   }
-  uint32_t n = graphs.size();
-  fwrite(&n, sizeof(uint32_t), 1, gf);
-  for (uint32_t i = 0; i < n; i++){
-    gssw_soa_graph* g = graphs[i];
-    fwrite(&g->num_nodes, sizeof(uint32_t), 1, gf);
-    fwrite(&g->total_nexts, sizeof(uint32_t), 1, gf);
-    fwrite(&g->total_seq, sizeof(uint32_t), 1, gf);
-    fwrite(g->nodes, sizeof(gssw_node_desc), g->num_nodes, gf);
-    fwrite(g->nexts, sizeof(int16_t), g->total_nexts, gf);
-    fwrite(g->seqs, sizeof(int8_t), g->total_seq, gf);
+  f << graphs.size() << "\n";
+  for (size_t gi = 0; gi < graphs.size(); gi++){
+    gssw_soa_graph* g = graphs[gi];
+    f << g->num_nodes << " "
+      << g->total_nexts << " "
+      << g->total_seq << "\n";
+    // Node descriptors
+    for (uint32_t i = 0; i < g->num_nodes; i++){
+      if (i > 0) f << ", ";
+      f << "(" << g->nodes[i].seq_off << ","
+        << g->nodes[i].seq_len << ","
+        << g->nodes[i].next_off << ","
+        << g->nodes[i].next_len << ")";
+    }
+    f << "\n";
+    // Nexts
+    for (uint32_t i = 0; i < g->total_nexts; i++){
+      if (i > 0) f << " ";
+      f << g->nexts[i];
+    }
+    f << "\n";
+    // Sequences (numeric values)
+    for (uint32_t i = 0; i < g->total_seq; i++){
+      if (i > 0) f << " ";
+      f << (int)g->seqs[i];
+    }
+    f << "\n";
   }
-  fclose(gf);
-
-  // Write reads.bin
-  std::string rpath = input_dir + "/Inputs/reads.bin";
-  FILE* rf = fopen(rpath.c_str(), "wb");
-  if (!rf){
-    std::cerr << "Failed to open " << rpath << std::endl;
-    return;
-  }
-  uint32_t nr = reads.size();
-  fwrite(&nr, sizeof(uint32_t), 1, rf);
-  for (uint32_t i = 0; i < nr; i++){
-    uint32_t len = reads[i].size();
-    fwrite(&len, sizeof(uint32_t), 1, rf);
-    fwrite(reads[i].c_str(), 1, len, rf);
-  }
-  fclose(rf);
 }
 #endif // DUMP_GRAPH
 
-// Check if binary graph file exists
-static bool binary_exists(const std::string& input_dir){
-  std::string gpath = input_dir + "/Inputs/graph.bin";
-  std::string rpath = input_dir + "/Inputs/reads.bin";
-  std::ifstream gf(gpath);
-  std::ifstream rf(rpath);
-  return gf.good() && rf.good();
+// Check if text graph file exists
+static bool text_graph_exists(const std::string& input_dir){
+  std::string path = input_dir + "/Inputs/graph.soa";
+  std::ifstream f(path);
+  return f.good();
 }
 
-// Load a single SoA graph from an open binary file
-static gssw_soa_graph* load_graph_binary(FILE* f){
+// Load a single SoA graph from an open text file stream
+static gssw_soa_graph* load_graph_text(std::ifstream& f){
   gssw_soa_graph* g =
       (gssw_soa_graph*)calloc(1, sizeof(gssw_soa_graph));
-  fread(&g->num_nodes, sizeof(uint32_t), 1, f);
-  fread(&g->total_nexts, sizeof(uint32_t), 1, f);
-  fread(&g->total_seq, sizeof(uint32_t), 1, f);
+  f >> g->num_nodes >> g->total_nexts >> g->total_seq;
+  f.ignore(); // skip newline
+
+  // Parse node descriptors: (seq_off,seq_len,next_off,next_len)
   g->nodes = (gssw_node_desc*)malloc(
       g->num_nodes * sizeof(gssw_node_desc));
-  fread(g->nodes, sizeof(gssw_node_desc), g->num_nodes, f);
+  std::string line;
+  std::getline(f, line);
+  {
+    std::istringstream ss(line);
+    for (uint32_t i = 0; i < g->num_nodes; i++){
+      char paren, comma;
+      int so, sl, no, nl;
+      if (i > 0) ss >> comma; // consume ", "
+      ss >> paren >> so >> comma >> sl >> comma
+         >> no >> comma >> nl >> paren;
+      g->nodes[i].seq_off = (int16_t)so;
+      g->nodes[i].seq_len = (int16_t)sl;
+      g->nodes[i].next_off = (int16_t)no;
+      g->nodes[i].next_len = (int16_t)nl;
+    }
+  }
+
+  // Parse nexts
   g->nexts = (int16_t*)malloc(
       g->total_nexts * sizeof(int16_t));
-  fread(g->nexts, sizeof(int16_t), g->total_nexts, f);
+  std::getline(f, line);
+  {
+    std::istringstream ss(line);
+    for (uint32_t i = 0; i < g->total_nexts; i++){
+      int v; ss >> v;
+      g->nexts[i] = (int16_t)v;
+    }
+  }
+
+  // Parse sequences
   g->seqs = (int8_t*)malloc(g->total_seq * sizeof(int8_t));
-  fread(g->seqs, sizeof(int8_t), g->total_seq, f);
+  std::getline(f, line);
+  {
+    std::istringstream ss(line);
+    for (uint32_t i = 0; i < g->total_seq; i++){
+      int v; ss >> v;
+      g->seqs[i] = (int8_t)v;
+    }
+  }
+
   return g;
 }
 
@@ -176,13 +211,11 @@ std::vector<ReadAlignmentParams>* load_read_alignment_params(
     size_t num_inputs, std::string input_dir){
 
 #ifdef DUMP_GRAPH
-  // ---- Dump mode: load ALL from JSON, convert, write binary ----
+  // ---- Dump mode: load ALL from JSON, convert, write text ----
   {
     std::cout << "DUMP_GRAPH: loading all JSON..." << std::endl;
     nlohmann::json* graphs = ld_gssw_graph(input_dir);
     size_t json_size = graphs->size();
-    std::vector<std::string> all_seqs =
-        ld_seqs(input_dir, json_size);
     std::vector<gssw_soa_graph*> all_graphs;
     all_graphs.reserve(json_size);
     for (size_t i = 0; i < json_size; i++){
@@ -191,55 +224,48 @@ std::vector<ReadAlignmentParams>* load_read_alignment_params(
       gssw_graph_destroy(old_g);
     }
     delete graphs;
-    dump_binary(input_dir, all_graphs, all_seqs);
+    dump_text(input_dir, all_graphs);
     std::cout << "Dumped " << json_size
-              << " graphs to binary" << std::endl;
+              << " graphs to graph.soa" << std::endl;
     for (auto g : all_graphs) gssw_soa_graph_destroy(g);
   }
-  // Fall through to binary loading below
+  // Fall through to text loading below
 #endif
 
   int skipped = 0;
   std::vector<ReadAlignmentParams>* params;
 
-  if (binary_exists(input_dir)){
-    // ---- Fast path: load from binary ----
-    std::cout << "Loading from binary..." << std::endl;
-    std::string gpath = input_dir + "/Inputs/graph.bin";
-    std::string rpath = input_dir + "/Inputs/reads.bin";
-    FILE* gf = fopen(gpath.c_str(), "rb");
-    FILE* rf = fopen(rpath.c_str(), "rb");
-    uint32_t ng, nr;
-    fread(&ng, sizeof(uint32_t), 1, gf);
-    fread(&nr, sizeof(uint32_t), 1, rf);
+  if (text_graph_exists(input_dir)){
+    // ---- Fast path: load from text SoA + reads.txt ----
+    std::cout << "Loading from graph.soa..." << std::endl;
+    std::string gpath = input_dir + "/Inputs/graph.soa";
+    std::ifstream gf(gpath);
+    uint32_t ng;
+    gf >> ng;
+    gf.ignore();
+
+    std::vector<std::string> seqs = ld_seqs(input_dir, ng);
     size_t limit = std::min(num_inputs,
-                            (size_t)std::min(ng, nr));
+                            (size_t)std::min(ng,
+                              (uint32_t)seqs.size()));
+
     params = new std::vector<ReadAlignmentParams>(limit);
     size_t out_idx = 0;
     for (size_t i = 0; i < limit; i++){
-      // Read the read
-      uint32_t rlen;
-      fread(&rlen, sizeof(uint32_t), 1, rf);
-      std::string seq(rlen, '\0');
-      fread(&seq[0], 1, rlen, rf);
-
-      // Read the graph
-      gssw_soa_graph* g = load_graph_binary(gf);
+      gssw_soa_graph* g = load_graph_text(gf);
 
       // N-filter
-      if (read_has_n(seq) || soa_graph_has_n(g)){
+      if (read_has_n(seqs[i]) || soa_graph_has_n(g)){
         gssw_soa_graph_destroy(g);
         skipped++;
         continue;
       }
 
       (*params)[out_idx].graph = g;
-      (*params)[out_idx].seq = seq;
+      (*params)[out_idx].seq = seqs[i];
       out_idx++;
     }
     params->resize(out_idx);
-    fclose(gf);
-    fclose(rf);
   } else {
     // ---- Slow path: load from JSON ----
     std::cout << "Loading from JSON..." << std::endl;
