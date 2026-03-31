@@ -15,9 +15,9 @@
  */
 typedef struct ReadAlignmentParams {
   gssw_soa_graph* graph;
-  std::string seq;
-  uint16_t score;  // filled by kernel
-  ReadAlignmentParams() : graph(nullptr), score(0) {}
+  gssw_profile* prof;  // precomputed match profile
+  uint16_t score;      // filled by kernel
+  ReadAlignmentParams() : graph(nullptr), prof(nullptr), score(0) {}
   ~ReadAlignmentParams();
 } ReadAlignmentParams;
 

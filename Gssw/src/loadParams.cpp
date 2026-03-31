@@ -49,6 +49,7 @@ int getNumItersFromArgs(int argc, char* argv[]){
 
 ReadAlignmentParams::~ReadAlignmentParams(){
   if (graph) gssw_soa_graph_destroy(graph);
+  if (prof) gssw_init_destroy(prof);
 }
 
 // Forward declarations for internal functions
@@ -140,13 +141,79 @@ static void dump_text(const std::string& input_dir,
     f << "\n";
   }
 }
+
+// Write precomputed match profiles to matchProfiles.txt.
+//
+// File format:
+//   Line 1: <num_profiles>
+//   Then for each query (4 lines per base + 1 header):
+//     Line 1: <readLen>
+//     Line 2: <profile bytes for base A>  (segLen*16 space-sep uint8)
+//     Line 3: <profile bytes for base C>
+//     Line 4: <profile bytes for base G>
+//     Line 5: <profile bytes for base T>
+//
+//   segLen = ceil(readLen / 16).
+//   Each value includes the bias (+4) and full-length bonuses.
+static void dump_profiles(const std::string& input_dir,
+                          const std::vector<gssw_profile*>& profs){
+  std::string path = input_dir + "/Inputs/matchProfiles.txt";
+  std::ofstream f(path);
+  if (!f.is_open()){
+    std::cerr << "Failed to open " << path << std::endl;
+    return;
+  }
+  f << profs.size() << "\n";
+  for (size_t qi = 0; qi < profs.size(); qi++){
+    gssw_profile* p = profs[qi];
+    int32_t segLen = (p->readLen + 15) / 16;
+    int32_t n = 4;
+    f << p->readLen << "\n";
+    uint8_t* bytes = (uint8_t*)p->profile_byte;
+    for (int32_t base = 0; base < n; base++){
+      for (int32_t j = 0; j < segLen * 16; j++){
+        if (j > 0) f << " ";
+        f << (int)bytes[base * segLen * 16 + j];
+      }
+      f << "\n";
+    }
+  }
+}
 #endif // DUMP_GRAPH
 
-// Check if text graph file exists
-static bool text_graph_exists(const std::string& input_dir){
-  std::string path = input_dir + "/Inputs/graph.soa";
-  std::ifstream f(path);
-  return f.good();
+// Check if all required text files exist
+static bool text_data_exists(const std::string& input_dir){
+  std::ifstream g(input_dir + "/Inputs/graph.soa");
+  std::ifstream p(input_dir + "/Inputs/matchProfiles.txt");
+  return g.good() && p.good();
+}
+
+// Load a single precomputed profile from text file stream
+static gssw_profile* load_profile_text(std::ifstream& f){
+  int32_t readLen;
+  f >> readLen;
+  f.ignore();
+
+  int32_t segLen = (readLen + 15) / 16;
+  int32_t n = 4;
+  gssw_profile* p = (gssw_profile*)calloc(
+      1, sizeof(struct gssw_profile));
+  p->readLen = readLen;
+  p->bias = 4;
+  p->profile_byte = (__m128i*)malloc(
+      n * segLen * sizeof(__m128i));
+
+  uint8_t* bytes = (uint8_t*)p->profile_byte;
+  std::string line;
+  for (int32_t base = 0; base < n; base++){
+    std::getline(f, line);
+    std::istringstream ss(line);
+    for (int32_t j = 0; j < segLen * 16; j++){
+      int v; ss >> v;
+      bytes[base * segLen * 16 + j] = (uint8_t)v;
+    }
+  }
+  return p;
 }
 
 // Load a single SoA graph from an open text file stream
@@ -220,27 +287,40 @@ static std::vector<std::string> ld_seqs(
   return seqs;
 }
 
+// Build a profile from an ASCII read string
+static gssw_profile* build_profile(const std::string& seq){
+  std::vector<int8_t> num = encode_read(seq);
+  return gssw_init(num.data(), num.size());
+}
+
 std::vector<ReadAlignmentParams>* load_read_alignment_params(
     size_t num_inputs, std::string input_dir){
 
 #ifdef DUMP_GRAPH
-  // ---- Dump mode: load ALL from JSON, convert, write text ----
+  // ---- Dump mode: load ALL, convert, write text + profiles ----
   {
     std::cout << "DUMP_GRAPH: loading all JSON..." << std::endl;
     nlohmann::json* graphs = ld_gssw_graph(input_dir);
     size_t json_size = graphs->size();
+    std::vector<std::string> all_seqs =
+        ld_seqs(input_dir, json_size);
     std::vector<gssw_soa_graph*> all_graphs;
+    std::vector<gssw_profile*> all_profs;
     all_graphs.reserve(json_size);
+    all_profs.reserve(json_size);
     for (size_t i = 0; i < json_size; i++){
       gssw_graph* old_g = ld_graph((*graphs)[i]);
       all_graphs.push_back(convert_to_soa(old_g));
       gssw_graph_destroy(old_g);
+      all_profs.push_back(build_profile(all_seqs[i]));
     }
     delete graphs;
     dump_text(input_dir, all_graphs);
+    dump_profiles(input_dir, all_profs);
     std::cout << "Dumped " << json_size
-              << " graphs to graph.soa" << std::endl;
+              << " graphs + profiles" << std::endl;
     for (auto g : all_graphs) gssw_soa_graph_destroy(g);
+    for (auto p : all_profs) gssw_init_destroy(p);
   }
   // Fall through to text loading below
 #endif
@@ -248,39 +328,42 @@ std::vector<ReadAlignmentParams>* load_read_alignment_params(
   int skipped = 0;
   std::vector<ReadAlignmentParams>* params;
 
-  if (text_graph_exists(input_dir)){
-    // ---- Fast path: load from text SoA + reads.txt ----
-    std::cout << "Loading from graph.soa..." << std::endl;
-    std::string gpath = input_dir + "/Inputs/graph.soa";
-    std::ifstream gf(gpath);
-    uint32_t ng;
-    gf >> ng;
-    gf.ignore();
-
-    std::vector<std::string> seqs = ld_seqs(input_dir, ng);
+  if (text_data_exists(input_dir)){
+    // ---- Fast path: load graphs + profiles from text ----
+    std::cout << "Loading from text files..." << std::endl;
+    std::ifstream gf(input_dir + "/Inputs/graph.soa");
+    std::ifstream pf(input_dir + "/Inputs/matchProfiles.txt");
+    uint32_t ng, np;
+    gf >> ng; gf.ignore();
+    pf >> np; pf.ignore();
     size_t limit = std::min(num_inputs,
-                            (size_t)std::min(ng,
-                              (uint32_t)seqs.size()));
+                            (size_t)std::min(ng, np));
+
+    // Still need reads for N-filtering
+    std::vector<std::string> seqs = ld_seqs(input_dir, limit);
+    limit = std::min(limit, seqs.size());
 
     params = new std::vector<ReadAlignmentParams>(limit);
     size_t out_idx = 0;
     for (size_t i = 0; i < limit; i++){
       gssw_soa_graph* g = load_graph_text(gf);
+      gssw_profile* p = load_profile_text(pf);
 
       // N-filter
       if (read_has_n(seqs[i]) || soa_graph_has_n(g)){
         gssw_soa_graph_destroy(g);
+        gssw_init_destroy(p);
         skipped++;
         continue;
       }
 
       (*params)[out_idx].graph = g;
-      (*params)[out_idx].seq = seqs[i];
+      (*params)[out_idx].prof = p;
       out_idx++;
     }
     params->resize(out_idx);
   } else {
-    // ---- Slow path: load from JSON ----
+    // ---- Slow path: load from JSON, build profiles ----
     std::cout << "Loading from JSON..." << std::endl;
     nlohmann::json* graphs = ld_gssw_graph(input_dir);
     size_t json_size = graphs->size();
@@ -304,7 +387,7 @@ std::vector<ReadAlignmentParams>* load_read_alignment_params(
       gssw_graph_destroy(old_g);
 
       (*params)[out_idx].graph = g;
-      (*params)[out_idx].seq = seqs[i];
+      (*params)[out_idx].prof = build_profile(seqs[i]);
       out_idx++;
     }
     params->resize(out_idx);

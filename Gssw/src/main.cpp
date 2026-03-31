@@ -35,15 +35,13 @@ int main(int argc, char* argv[]){
   #pragma omp for
 #endif
   for (int i=0; i < numIters; i++){ //loop over reads
-    gssw_soa_graph* graph = (*params)[i].graph;
-    std::vector<int8_t> read_num =
-        encode_read((*params)[i].seq);
     (*params)[i].score = gssw_soa_graph_fill(
-        graph, read_num.data(), read_num.size());
+        (*params)[i].graph, (*params)[i].prof);
   }
   auto kernel_end = std::chrono::system_clock::now();
   std::cout << "Kernel Complete" << std::endl;
   END_ROI
+  gssw_print_timers();
 
   // Write scores (one per line)
   std::cout << "Writing Outputs" << std::endl;
