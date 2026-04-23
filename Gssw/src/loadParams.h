@@ -7,8 +7,7 @@
 #include <vector>
 
 #include "gssw.h"
-#include "nlohmann/json.hpp"
- 
+
 /*
  * Convenient structure for holding the parameters needed for a single iteration
  * (read) of gssw.
@@ -45,9 +44,6 @@ std::string getInputDirFromArgs(int argc, char* argv[]);
 std::vector<ReadAlignmentParams>* load_read_alignment_params(size_t num_inputs,
                                                         std::string input_dir);
 
-
-// Encode ASCII read to numeric (A=0, C=1, G=2, T=3)
-std::vector<int8_t> encode_read(const std::string& seq);
 
 // Counts the number of reads to process
 int ld_num_inputs(std::string in_dir);

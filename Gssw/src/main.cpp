@@ -29,14 +29,19 @@ int main(int argc, char* argv[]){
   BEGIN_ROI
   std::cout << "Running Kernel" << std::endl;
   auto kernel_start = std::chrono::system_clock::now();
+  std::vector<double> query_times_us(numIters);
 #if (THREADING_ENABLED==1)
-  #pragma omp parallel 
+  #pragma omp parallel
   printf("launching thread %d\n",omp_get_thread_num());
   #pragma omp for
 #endif
   for (int i=0; i < numIters; i++){ //loop over reads
+    auto q_start = std::chrono::steady_clock::now();
     (*params)[i].score = gssw_soa_graph_fill(
         (*params)[i].graph, (*params)[i].prof);
+    auto q_end = std::chrono::steady_clock::now();
+    query_times_us[i] = std::chrono::duration<double, std::micro>(
+        q_end - q_start).count();
   }
   auto kernel_end = std::chrono::system_clock::now();
   std::cout << "Kernel Complete" << std::endl;
@@ -50,6 +55,13 @@ int main(int argc, char* argv[]){
     std::ofstream scoreFile(std::string(OUT_DIR) + "/scores.txt");
     for (int i = 0; i < numIters; i++){
       scoreFile << (*params)[i].score << "\n";
+    }
+  }
+  // Write per-query times
+  {
+    std::ofstream tFile(std::string(OUT_DIR) + "/query_times_us.txt");
+    for (int i = 0; i < numIters; i++){
+      tFile << query_times_us[i] << "\n";
     }
   }
   auto write_end = std::chrono::system_clock::now();
