@@ -1,7 +1,3 @@
-[submodule "vgGsswDump"]
-	path = Gssw/deps/vg
-	url = https://github.com/kaplannp/vg.git
-	branch = dumper
 [submodule "GraphAligner"]
 	path = Gbv/deps/GraphAligner
 	url = https://github.com/kaplannp/GraphAligner.git
