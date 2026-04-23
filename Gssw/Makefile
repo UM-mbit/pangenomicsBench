@@ -21,7 +21,7 @@ OBJ_FILES_ROOT := $(OBJ_DIR)/eval.cpp $(OBJ_DIR)/loadParams.cpp $(OBJ_DIR)/gssw_
 OBJ_FILES_SINGLE := $(addsuffix .single.o, $(OBJ_FILES_ROOT))
 OBJ_FILES_PROF := $(addsuffix .prof.o, $(OBJ_FILES_ROOT))
 OBJ_FILES_OMP := $(addsuffix .omp.o, $(OBJ_FILES_ROOT))
-#OBJ_FILES := $(SRC_DIR)/eval.o $(SRC_DIR)/loadParams.o $(CWD)/deps/vg/src/gssw_to_json.o $(SRC_DIR)/main.o
+OBJ_FILES_DUMP := $(addsuffix .dump.o, $(OBJ_FILES_ROOT))
 
 all:$(OBJ_DIR) $(BIN_DIR) $(BIN_DIR)/$(EXE) $(BIN_DIR)/$(EXE).omp $(BIN_DIR)/$(EXE).prof
 
@@ -31,46 +31,50 @@ $(OBJ_DIR):
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-#requires that py38 is activte
-$(DEP_SRC_DIR)/vg.pb.h:
-	cd deps/vg && . ./source_me.sh && make -j
-
-
-#BEGIN SINGLE THREADED REGION 
-$(OBJ_DIR)/gssw_to_json.cpp.single.o: $(DEP_SRC_DIR)/gssw_to_json.cpp $(DEP_SRC_DIR)/vg.pb.h
+#BEGIN SINGLE THREADED REGION
+$(OBJ_DIR)/gssw_to_json.cpp.single.o: $(DEP_SRC_DIR)/gssw_to_json.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) -c -o $@ $(DEP_SRC_DIR)/gssw_to_json.cpp
 
-$(OBJ_DIR)/%.cpp.single.o: $(SRC_DIR)/%.cpp 
+$(OBJ_DIR)/%.cpp.single.o: $(SRC_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) -c -o $@ $^
 
 $(BIN_DIR)/$(EXE): $(OBJ_FILES_SINGLE)
 	$(CXX) $(INCLUDE_FLAGS) -o $@ $^ $(LD_LIB_DIR_FLAGS) $(LD_LIB_FLAGS)
-#END SINGLE THREADED REGION 
+#END SINGLE THREADED REGION
 
-#BEGIN OMP THREADED REGION 
-$(OBJ_DIR)/gssw_to_json.cpp.omp.o: $(DEP_SRC_DIR)/gssw_to_json.cpp $(DEP_SRC_DIR)/vg.pb.h
+#BEGIN OMP THREADED REGION
+$(OBJ_DIR)/gssw_to_json.cpp.omp.o: $(DEP_SRC_DIR)/gssw_to_json.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) -c -o $@ $(DEP_SRC_DIR)/gssw_to_json.cpp -DTHREADING_ENABLED=1 -DTIMER_ENABLED=1
 
-$(OBJ_DIR)/%.cpp.omp.o: $(SRC_DIR)/%.cpp 
+$(OBJ_DIR)/%.cpp.omp.o: $(SRC_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) -c -o $@ $^ -DTHREADING_ENABLED=1 -DTIMER_ENABLED=1
 
 $(BIN_DIR)/$(EXE).omp: $(OBJ_FILES_OMP)
 	$(CXX) $(INCLUDE_FLAGS) -o $@ $^ $(LD_LIB_DIR_FLAGS) $(LD_LIB_FLAGS)
-#END OMP THREADED REGION 
+#END OMP THREADED REGION
 
-#BEGIN PROFILABLE REGION 
-$(OBJ_DIR)/gssw_to_json.cpp.prof.o: $(DEP_SRC_DIR)/gssw_to_json.cpp $(DEP_SRC_DIR)/vg.pb.h
+#BEGIN PROFILABLE REGION
+$(OBJ_DIR)/gssw_to_json.cpp.prof.o: $(DEP_SRC_DIR)/gssw_to_json.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) -c -o $@ $(DEP_SRC_DIR)/gssw_to_json.cpp -DTIMER_ENABLED=1 -DVTUNE_ENABLED=1 -DPIN_ENABLED=1
 
-$(OBJ_DIR)/%.cpp.prof.o: $(SRC_DIR)/%.cpp 
+$(OBJ_DIR)/%.cpp.prof.o: $(SRC_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) -c -o $@ $^ -DTIMER_ENABLED=1 -DVTUNE_ENABLED=1 -DPIN_ENABLED=1
 
 $(BIN_DIR)/$(EXE).prof: $(OBJ_FILES_PROF)
 	$(CXX) $(INCLUDE_FLAGS) -o $@ $^ $(LD_LIB_DIR_FLAGS) $(LD_LIB_FLAGS)
-#END PROFILABLE REGION 
+#END PROFILABLE REGION
 
+#BEGIN DUMP REGION (binary dataset generation)
+$(OBJ_DIR)/gssw_to_json.cpp.dump.o: $(DEP_SRC_DIR)/gssw_to_json.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) -c -o $@ $(DEP_SRC_DIR)/gssw_to_json.cpp -DDUMP_GRAPH
+
+$(OBJ_DIR)/%.cpp.dump.o: $(SRC_DIR)/%.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDE_FLAGS) -c -o $@ $^ -DDUMP_GRAPH
+
+$(BIN_DIR)/$(EXE).dump: $(OBJ_FILES_DUMP)
+	$(CXX) $(INCLUDE_FLAGS) -o $@ $^ $(LD_LIB_DIR_FLAGS) $(LD_LIB_FLAGS)
+#END DUMP REGION
 
 clean:
-	rm -f $(BIN_DIR)/$(EXE)
+	rm -f $(BIN_DIR)/$(EXE) $(BIN_DIR)/$(EXE).omp $(BIN_DIR)/$(EXE).prof $(BIN_DIR)/$(EXE).dump
 	rm -f $(OBJ_DIR)/*.o
-	cd deps/vg && make clean

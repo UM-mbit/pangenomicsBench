@@ -8,8 +8,7 @@
 #include <fstream>
 #include <vector>
 #include <limits.h>
-
-#include "gssw_to_json.hpp"
+#include <algorithm>
 
 std::string getInputDirFromArgs(int argc, char* argv[]){
   if (argc == 2 || argc == 3){ //either no n_iters or n_iters provided
@@ -47,79 +46,185 @@ int getNumItersFromArgs(int argc, char* argv[]){
 }
 
 ReadAlignmentParams::~ReadAlignmentParams(){
-  gssw_graph_destroy(graph);
-  delete nt_table;
-  delete score_matrix;
+  if (graph) gssw_soa_graph_destroy(graph);
+  if (prof) gssw_init_destroy(prof);
 }
 
-std::vector<ReadAlignmentParams>* load_read_alignment_params(size_t num_inputs,
-                                                        std::string input_dir){
-  std::vector<ReadAlignmentParams>* params = 
-         new std::vector<ReadAlignmentParams>(num_inputs);
+// Check if a read sequence contains N or n
+static bool read_has_n(const std::string& seq){
+  for (char c : seq){
+    if (c == 'N' || c == 'n') return true;
+  }
+  return false;
+}
 
-  nlohmann::json* graphs = ld_gssw_graph(input_dir);
-  for (int i = 0; i < num_inputs; i++){
-    (*params)[i].graph = ld_graph((*graphs)[i]);
-    std::string seq = ld_seq(input_dir, i);
-    (*params)[i].seq = seq;
-    (*params)[i].nt_table = get_nt_table(seq.size());
-    (*params)[i].score_matrix = get_score_matrix();
+// Check if any byte in the SoA graph's seq array is N (value 4)
+static bool soa_graph_has_n(gssw_soa_graph* g){
+  for (uint32_t i = 0; i < g->total_seq; i++){
+    if (g->seqs[i] == 4) return true;
+  }
+  return false;
+}
+
+// Check if all required text files exist
+static bool text_data_exists(const std::string& input_dir){
+  std::ifstream g(input_dir + "/Inputs/graph.soa");
+  std::ifstream p(input_dir + "/Inputs/matchProfiles.txt");
+  return g.good() && p.good();
+}
+
+// Load a single precomputed profile from text file stream
+static gssw_profile* load_profile_text(std::ifstream& f){
+  int32_t readLen;
+  f >> readLen;
+  f.ignore();
+
+  int32_t segLen = (readLen + 15) / 16;
+  int32_t n = 4;
+  gssw_profile* p = (gssw_profile*)calloc(
+      1, sizeof(struct gssw_profile));
+  p->readLen = readLen;
+  p->bias = 4;
+  p->profile_byte = (__m128i*)malloc(
+      n * segLen * sizeof(__m128i));
+
+  uint8_t* bytes = (uint8_t*)p->profile_byte;
+  std::string line;
+  for (int32_t base = 0; base < n; base++){
+    std::getline(f, line);
+    std::istringstream ss(line);
+    for (int32_t j = 0; j < segLen * 16; j++){
+      int v; ss >> v;
+      bytes[base * segLen * 16 + j] = (uint8_t)v;
+    }
+  }
+  return p;
+}
+
+// Load a single SoA graph from an open text file stream
+static gssw_soa_graph* load_graph_text(std::ifstream& f){
+  gssw_soa_graph* g =
+      (gssw_soa_graph*)calloc(1, sizeof(gssw_soa_graph));
+  f >> g->num_nodes >> g->total_nexts >> g->total_seq;
+  f.ignore(); // skip newline
+
+  // Parse node descriptors: (seq_off,seq_len,next_off,next_len)
+  g->nodes = (gssw_node_desc*)malloc(
+      g->num_nodes * sizeof(gssw_node_desc));
+  std::string line;
+  std::getline(f, line);
+  {
+    std::istringstream ss(line);
+    for (uint32_t i = 0; i < g->num_nodes; i++){
+      char paren, comma;
+      int so, sl, no, nl;
+      if (i > 0) ss >> comma; // consume ", "
+      ss >> paren >> so >> comma >> sl >> comma
+         >> no >> comma >> nl >> paren;
+      g->nodes[i].seq_off = (int16_t)so;
+      g->nodes[i].seq_len = (int16_t)sl;
+      g->nodes[i].next_off = (int16_t)no;
+      g->nodes[i].next_len = (int16_t)nl;
+    }
+  }
+
+  // Parse nexts
+  g->nexts = (int16_t*)malloc(
+      g->total_nexts * sizeof(int16_t));
+  std::getline(f, line);
+  {
+    std::istringstream ss(line);
+    for (uint32_t i = 0; i < g->total_nexts; i++){
+      int v; ss >> v;
+      g->nexts[i] = (int16_t)v;
+    }
+  }
+
+  // Parse sequences
+  g->seqs = (int8_t*)malloc(g->total_seq * sizeof(int8_t));
+  std::getline(f, line);
+  {
+    std::istringstream ss(line);
+    for (uint32_t i = 0; i < g->total_seq; i++){
+      int v; ss >> v;
+      g->seqs[i] = (int8_t)v;
+    }
+  }
+
+  return g;
+}
+
+// Load first num_reads reads from reads.txt in a single pass
+static std::vector<std::string> ld_seqs(
+    const std::string& input_dir, size_t num_reads){
+  std::vector<std::string> seqs;
+  seqs.reserve(num_reads);
+  std::ifstream f(input_dir + "/Inputs/reads.txt");
+  std::string line;
+  for (size_t i = 0; i < num_reads && std::getline(f, line); i++){
+    // Strip the line number prefix ("123: ")
+    size_t space_pos = line.find(' ');
+    if (space_pos != std::string::npos)
+      seqs.push_back(line.substr(space_pos + 1));
+    else
+      seqs.push_back(line);
+  }
+  return seqs;
+}
+
+std::vector<ReadAlignmentParams>* load_read_alignment_params(
+    size_t num_inputs, std::string input_dir){
+
+  if (!text_data_exists(input_dir)){
+    fprintf(stderr,
+        "error: text data (graph.soa, matchProfiles.txt) "
+        "not found in %s/Inputs/\n"
+        "Run a prior branch with DUMP_GRAPH to generate.\n",
+        input_dir.c_str());
+    exit(1);
+  }
+
+  int skipped = 0;
+
+  // Load graphs + profiles from text
+  std::cout << "Loading from text files..." << std::endl;
+  std::ifstream gf(input_dir + "/Inputs/graph.soa");
+  std::ifstream pf(input_dir + "/Inputs/matchProfiles.txt");
+  uint32_t ng, np;
+  gf >> ng; gf.ignore();
+  pf >> np; pf.ignore();
+  size_t limit = std::min(num_inputs,
+                          (size_t)std::min(ng, np));
+
+  // Still need reads for N-filtering
+  std::vector<std::string> seqs = ld_seqs(input_dir, limit);
+  limit = std::min(limit, seqs.size());
+
+  auto* params = new std::vector<ReadAlignmentParams>(limit);
+  size_t out_idx = 0;
+  for (size_t i = 0; i < limit; i++){
+    gssw_soa_graph* g = load_graph_text(gf);
+    gssw_profile* p = load_profile_text(pf);
+
+    // N-filter
+    if (read_has_n(seqs[i]) || soa_graph_has_n(g)){
+      gssw_soa_graph_destroy(g);
+      gssw_init_destroy(p);
+      skipped++;
+      continue;
+    }
+
+    (*params)[out_idx].graph = g;
+    (*params)[out_idx].prof = p;
+    out_idx++;
+  }
+  params->resize(out_idx);
+
+  if (skipped > 0){
+    std::cout << "Filtered " << skipped
+              << " queries containing N" << std::endl;
   }
   return params;
-}
-
-int8_t* get_nt_table(size_t seqLen){
-//This one is a little funky. In vg it is initialized according to a constant
-//pattern that uses some for loops. Here we've just taken the first 255 elements
-//and will use substrings to generate however many are needed
-  static int8_t full_nt_table[255]{4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 4, 1, 4, 4, 4, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 4, 1, 4, 4, 4, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 71, 67, 84, 67, 0, -15, 32, -96, -94, 127, 0, 0, -128, -53, 32, -96, -94, 127, 0, 0, -128, -105, 33, -96, -94, 127, 0, 0, 48, -1, -122, -96, -94, 127, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 83, 50, 50, 53, 95, 52, 56, 50, 49, 52, 57, 0, -2, 127, 0, 0, 80, -1, -122, -96, -94, 127, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 83, 50, 50, 53, 95, 52, 56, 50, 49, 52, 57, 0, 71, 84, 67, 71, -92, 0, 0, 0, 65, 71, 65, 67, 13, 0, 0, 0, 0, 0, 0, 0, -92, 0, 0, 0, -91, 0, 0, 0, 0, 4, 4, 4, 4, 4};
-  int8_t* nt_table = new int8_t[255];
-  for (int i = 0; i < seqLen; i++){
-    nt_table[i] = full_nt_table[i];
-  }
-  return nt_table;
-}
-
-int8_t* get_score_matrix(){
-  int8_t* score_matrix = new int8_t[25]{1,-4,-4,-4, 0,
-                                       -4, 1,-4,-4, 0,
-                                       -4,-4, 1,-4, 0,
-                                       -4,-4,-4, 1, 0,
-                                        0, 0, 0, 0, 0};
-  return score_matrix;
-}
-
-nlohmann::json* ld_gssw_graph(std::string in_dir){
-  //std::cerr << "about to open the file" << std::endl;
-  std::ifstream f(in_dir+"/Inputs/graph.json");
-  //std::cerr << in_dir+"/Inputs/Graphs/g"+std::to_string(ind)+".json" << std::endl;
-  if (!f.is_open()) {
-              throw std::runtime_error("Could not open file");
-  }
-  nlohmann::json* data = new nlohmann::json();
-  *data = nlohmann::json::parse(f);
-  return data;
-}
-
-
-std::string ld_seq(std::string in_dir, int ind){
-  std::string data("");
-  std::string lineNum("");
-  std::ifstream f(in_dir+"/Inputs/reads.txt");
-
-  //scan up until the appropriate line
-  std::string line("");
-  std::getline(f,line);
-  int i = 0;
-  while (i < ind) { std::getline(f,line); i++;}
-  std::istringstream lineStream(line);
-  
-  //strip the number from line
-  std::getline(lineStream, lineNum, ' ');
-  //get the remainder (the data)
-  std::getline(lineStream, data);
-
-  return data;
 }
 
 int ld_num_inputs(std::string in_dir){
